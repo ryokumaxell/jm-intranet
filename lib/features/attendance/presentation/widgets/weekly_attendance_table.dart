@@ -3,10 +3,16 @@ import 'package:j_intranet/core/constants/app_colors.dart';
 import '../../domain/entities/attendance_record.dart';
 
 class WeeklyAttendanceTable extends StatelessWidget {
-  const WeeklyAttendanceTable({super.key, required this.records, required this.range});
+  const WeeklyAttendanceTable({
+    super.key,
+    required this.records,
+    required this.range,
+    this.onRegister,
+  });
 
   final List<AttendanceRecord> records;
   final DateTimeRange range;
+  final void Function(String employeeId, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +30,7 @@ class WeeklyAttendanceTable extends StatelessWidget {
         return _Row(
           employee: emp,
           days: days,
+          onRegister: onRegister,
         );
       },
     );
@@ -80,9 +87,10 @@ class _Header extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.employee, required this.days});
+  const _Row({required this.employee, required this.days, this.onRegister});
   final _EmployeeRowData employee;
   final List<DateTime> days;
+  final void Function(String employeeId, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +124,14 @@ class _Row extends StatelessWidget {
             ),
           ),
           for (final d in days)
-            Expanded(child: _DayCell(record: employee.byDate[d])),
+            Expanded(
+              child: _DayCell(
+                record: employee.byDate[d],
+                date: d,
+                employeeId: employee.id,
+                onRegister: onRegister,
+              ),
+            ),
         ],
       ),
     );
@@ -171,8 +186,11 @@ class _HeaderDayCell extends StatelessWidget {
 }
 
 class _DayCell extends StatelessWidget {
-  const _DayCell({required this.record});
+  const _DayCell({required this.record, required this.date, required this.employeeId, this.onRegister});
   final AttendanceRecord? record;
+  final DateTime date;
+  final String employeeId;
+  final void Function(String employeeId, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -217,6 +235,18 @@ class _DayCell extends StatelessWidget {
             children: [
               Flexible(child: Text('Salida   $exitText', textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
             ],
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: onRegister == null ? null : () => onRegister!(employeeId, date),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              minimumSize: const Size(0, 20),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              foregroundColor: Colors.blue,
+              textStyle: const TextStyle(fontSize: 11),
+            ),
+            child: const Text('Registrar'),
           ),
         ],
       ),
