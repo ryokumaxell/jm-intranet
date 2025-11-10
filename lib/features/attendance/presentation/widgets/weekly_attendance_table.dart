@@ -238,7 +238,9 @@ class _DayCell extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           TextButton(
-            onPressed: onRegister == null ? null : () => onRegister!(employeeId, date),
+            onPressed: () {
+              onRegister?.call(employeeId, date);
+            },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               minimumSize: const Size(0, 20),
