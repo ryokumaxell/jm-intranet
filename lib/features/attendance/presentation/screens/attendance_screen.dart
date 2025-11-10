@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/register_options_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:j_intranet/core/constants/app_colors.dart';
 import 'package:j_intranet/core/constants/app_text_styles.dart';
@@ -185,7 +186,16 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     ),
                     child: state.loading
                         ? const _TableSkeletonLoader()
-                        : WeeklyAttendanceTable(records: state.records, range: state.filters.dateRange),
+                        : WeeklyAttendanceTable(
+                            records: state.records,
+                            range: state.filters.dateRange,
+                            onRegister: (employeeId, date) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => RegisterOptionsModal(employeeId: employeeId, date: date),
+                              );
+                            },
+                          ),
                   ),
                 ),
               ],
@@ -206,7 +216,7 @@ class _TableSkeletonLoader extends StatelessWidget {
       itemCount: 6,
       itemBuilder: (context, index) {
         return Container(
-          height: 60,
+          height: 72,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.centerLeft,
           child: Row(
