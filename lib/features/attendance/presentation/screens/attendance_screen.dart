@@ -7,6 +7,7 @@ import 'package:j_intranet/core/constants/app_constants.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:j_intranet/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
+import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 
 import '../providers/attendance_providers.dart';
 // import '../widgets/date_range_selector.dart';
@@ -37,6 +38,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(attendanceControllerProvider);
     final ctrl = ref.read(attendanceControllerProvider.notifier);
+    final session = ref.watch(authSessionProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -50,11 +52,11 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        actions: const [
-          Icon(Icons.notifications_none),
-          SizedBox(width: 8),
-          CircleAvatar(child: Icon(Icons.person_outline)),
-          SizedBox(width: 12),
+        actions: [
+          const Icon(Icons.notifications_none),
+          const SizedBox(width: 8),
+          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
+          const SizedBox(width: 12),
         ],
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textDark,
@@ -64,8 +66,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           children: [
             UserAccountsDrawerHeader(
               currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
-              accountName: const Text('Usuario'),
-              accountEmail: const Text('usuario@jaymuebles.com'),
+              accountName: Text(session?.user.name ?? 'Invitado'),
+              accountEmail: Text(session?.user.email ?? ''),
             ),
             ListTile(
               leading: const Icon(Icons.dashboard_outlined),
@@ -96,20 +98,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Perfil'),
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('Ajustes'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Ajustes'),
-              onTap: () {
-                Navigator.pop(context);
               },
             ),
             const Spacer(),

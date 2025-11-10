@@ -5,6 +5,7 @@ import 'package:j_intranet/core/constants/app_constants.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
 import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
+import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 
 import '../providers/request_providers.dart';
 import 'request_detail_screen.dart';
@@ -28,37 +29,36 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
   @override
   Widget build(BuildContext context) {
     final requests = ref.watch(requestsProvider);
+    final session = ref.watch(authSessionProvider);
     final permisosPendientes = requests.where((e) => e.type == 'permission' && e.status == 'pending').toList();
     final vacaciones = requests.where((e) => e.type == 'vacation').toList();
     final tardanzas = requests.where((e) => e.type == 'tardiness').toList();
 
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Solicitudes'),
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-              tooltip: 'Abrir menú',
-            ),
-          ),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Permisos'),
-              Tab(text: 'Vacaciones'),
-              Tab(text: 'Internas (Tardanzas)'),
-            ],
+    // Vista única y bien distribuida (sin pestañas): secciones en grilla responsiva
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Solicitudes'),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Abrir menú',
           ),
         ),
-        drawer: Drawer(
+        actions: [
+          const Icon(Icons.notifications_none),
+          const SizedBox(width: 8),
+          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
+          const SizedBox(width: 12),
+        ],
+      ),
+      drawer: Drawer(
           child: Column(
             children: [
-              const UserAccountsDrawerHeader(
-                currentAccountPicture: CircleAvatar(child: Icon(Icons.person)),
-                accountName: Text('Usuario'),
-                accountEmail: Text('usuario@jaymuebles.com'),
+              UserAccountsDrawerHeader(
+                currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
+                accountName: Text(session?.user.name ?? 'Invitado'),
+                accountEmail: Text(session?.user.email ?? ''),
               ),
               ListTile(
                 leading: const Icon(Icons.dashboard_outlined),
@@ -89,20 +89,13 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Perfil'),
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('Ajustes'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
                   );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('Ajustes'),
-                onTap: () {
-                  Navigator.pop(context);
                 },
               ),
               const Spacer(),
@@ -118,94 +111,125 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
             ],
           ),
         ),
-        body: TabBarView(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          int cols = 1;
+          if (w >= 1200) cols = 3; else if (w >= 800) cols = 2;
+          final sections = [
+            _RequestsSection(title: 'Permisos pendientes', items: permisosPendientes),
+            _RequestsSection(title: 'Vacaciones', items: vacaciones),
+            _TardinessSection(items: tardanzas),
+          ];
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.2,
+              ),
+              itemCount: sections.length,
+              itemBuilder: (context, index) => sections[index],
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          // Ejemplo: agregar una solicitud de vacaciones
+          await ref.read(requestsProvider.notifier).add('vacation');
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Agregar demo'),
+      ),
+    );
+  }
+}
+
+class _RequestsSection extends StatelessWidget {
+  final String title;
+  final List<Request> items;
+  const _RequestsSection({required this.title, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _RequestsListView(items: permisosPendientes),
-            _RequestsListView(items: vacaciones),
-            _TardinessListView(items: tardanzas),
+            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (items.isEmpty)
+              const Text('Sin elementos', style: TextStyle(color: Colors.black54))
+            else
+              ...items.map((req) => ListTile(
+                    dense: true,
+                    title: Text('${req.type} • ${req.status}'),
+                    subtitle: Text('ID: ${req.id}'),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => RequestDetailScreen(id: req.id)),
+                      );
+                    },
+                  )),
           ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            // Ejemplo: agregar una solicitud de vacaciones
-            await ref.read(requestsProvider.notifier).add('vacation');
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Agregar demo'),
         ),
       ),
     );
   }
 }
 
-class _RequestsListView extends StatelessWidget {
+class _TardinessSection extends StatelessWidget {
   final List<Request> items;
-  const _RequestsListView({required this.items});
+  const _TardinessSection({required this.items});
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return const Center(child: Text('Sin elementos'));
-    }
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final req = items[index];
-        return ListTile(
-          title: Text('${req.type} • ${req.status}'),
-          subtitle: Text('ID: ${req.id}'),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => RequestDetailScreen(id: req.id),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _TardinessListView extends StatelessWidget {
-  final List<Request> items;
-  const _TardinessListView({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return const Center(child: Text('Sin notificaciones de tardanza'));
-    }
-    return ListView.builder(
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final req = items[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Tardanza • ${req.status}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text('ID: ${req.id}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      showDialog(context: context, builder: (_) => const TardinessModal());
-                    },
-                    icon: const Icon(Icons.timelapse),
-                    label: const Text('Registrar tardanza'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Internas (Tardanzas)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (items.isEmpty)
+              const Text('Sin notificaciones de tardanza', style: TextStyle(color: Colors.black54))
+            else
+              ...items.map((req) => Card(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Tardanza • ${req.status}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('ID: ${req.id}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                showDialog(context: context, builder: (_) => const TardinessModal());
+                              },
+                              icon: const Icon(Icons.timelapse),
+                              label: const Text('Registrar tardanza'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+          ],
+        ),
+      ),
     );
   }
 }
