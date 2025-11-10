@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:j_intranet/core/constants/app_text_styles.dart';
+import 'package:j_intranet/core/constants/app_constants.dart';
+import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
+import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
 
 import '../providers/request_providers.dart';
 import 'request_detail_screen.dart';
@@ -32,11 +37,84 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Solicitudes'),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: 'Abrir menú',
+            ),
+          ),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Permisos'),
               Tab(text: 'Vacaciones'),
               Tab(text: 'Internas (Tardanzas)'),
+            ],
+          ),
+        ),
+        drawer: Drawer(
+          child: Column(
+            children: [
+              const UserAccountsDrawerHeader(
+                currentAccountPicture: CircleAvatar(child: Icon(Icons.person)),
+                accountName: Text('Usuario'),
+                accountEmail: Text('usuario@jaymuebles.com'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.dashboard_outlined),
+                title: const Text('Inicio'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.list_alt_outlined),
+                title: const Text('Solicitudes'),
+                selected: true,
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.event_available_outlined),
+                title: const Text('Asistencia'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Perfil'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('Ajustes'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              const Spacer(),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Text('${AppConstants.appName} v0.1.0', style: AppTextStyles.small.copyWith(color: Colors.black54)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
