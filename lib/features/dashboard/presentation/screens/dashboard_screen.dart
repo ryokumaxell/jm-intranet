@@ -7,6 +7,7 @@ import 'package:j_intranet/features/auth/presentation/providers/auth_providers.d
 import 'package:j_intranet/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
 import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
+import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
 
 import '../providers/dashboard_providers.dart';
 import '../widgets/summary_card.dart';
@@ -111,6 +112,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             ),
             _DrawerItem(
+              icon: Icons.people_alt_outlined,
+              title: 'Empleados',
+              selected: _selectedDrawerIndex == 5,
+              onTap: () {
+                setState(() => _selectedDrawerIndex = 5);
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const EmployeesListScreen()),
+                );
+              },
+            ),
+            _DrawerItem(
               icon: Icons.list_alt_outlined,
               title: 'Solicitudes',
               selected: _selectedDrawerIndex == 1,
@@ -135,24 +148,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             ),
             _DrawerItem(
-              icon: Icons.person_outline,
-              title: 'Perfil',
-              selected: _selectedDrawerIndex == 2,
-              onTap: () {
-                setState(() => _selectedDrawerIndex = 2);
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
-            ),
-            _DrawerItem(
               icon: Icons.settings_outlined,
               title: 'Ajustes',
               selected: _selectedDrawerIndex == 3,
               onTap: () {
                 setState(() => _selectedDrawerIndex = 3);
                 Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
               },
             ),
             const Spacer(),
