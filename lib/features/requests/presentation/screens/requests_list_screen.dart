@@ -148,94 +148,101 @@ class TardinessModal extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text('Registrar tardanza', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Empleado'),
-                onChanged: (v) => employee = v,
-                validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
-              ),
-              const SizedBox(height: 12),
-              Row(
+        child: StatefulBuilder(
+          builder: (context, setState) {
+            return Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.calendar_today),
-                      label: Text('${date.year}-${date.month}-${date.day}'),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: date,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) date = picked;
-                      },
-                    ),
+                  const Text('Registrar tardanza', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Empleado'),
+                    onChanged: (v) => employee = v,
+                    validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.access_time),
-                      label: Text(time.format(context)),
-                      onPressed: () async {
-                        final picked = await showTimePicker(context: context, initialTime: time);
-                        if (picked != null) time = picked;
-                      },
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.calendar_today),
+                          label: Text('${date.year}-${date.month}-${date.day}'),
+                          onPressed: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: date,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) setState(() => date = picked);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.access_time),
+                          label: Text(time.format(context)),
+                          onPressed: () async {
+                            final picked = await showTimePicker(context: context, initialTime: time);
+                            if (picked != null) setState(() => time = picked);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(labelText: 'Minutos de tardanza'),
+                          initialValue: minutesLate.toString(),
+                          keyboardType: TextInputType.number,
+                          onChanged: (v) => minutesLate = int.tryParse(v) ?? minutesLate,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          decoration: const InputDecoration(labelText: 'Motivo'),
+                          onChanged: (v) => reason = v,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Cancelar'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (formKey.currentState?.validate() != true) return;
+                            Navigator.of(context).pop();
+                            final hh = time.hour.toString().padLeft(2, '0');
+                            final mm = time.minute.toString().padLeft(2, '0');
+                            final msg = 'Tardanza registrada: ${employee ?? ''}, ${date.year}-${date.month}-${date.day} $hh:$mm, ${minutesLate}m, motivo: ${reason ?? '-'}';
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                          },
+                          child: const Text('Guardar'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(labelText: 'Minutos de tardanza'),
-                      initialValue: minutesLate.toString(),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => minutesLate = int.tryParse(v) ?? minutesLate,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(labelText: 'Motivo'),
-                      onChanged: (v) => reason = v,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Cancelar'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (formKey.currentState?.validate() != true) return;
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tardanza registrada')));
-                      },
-                      child: const Text('Guardar'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

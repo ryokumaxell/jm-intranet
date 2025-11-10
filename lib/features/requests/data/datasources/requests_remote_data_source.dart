@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:j_intranet/core/network/endpoints.dart';
 
 import '../models/request_model.dart';
 
 class RequestsRemoteDataSource {
+  // ignore: unused_field
   final Dio _dio;
   RequestsRemoteDataSource(this._dio);
 
