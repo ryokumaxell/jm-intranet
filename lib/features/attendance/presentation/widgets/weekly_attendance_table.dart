@@ -12,7 +12,7 @@ class WeeklyAttendanceTable extends StatelessWidget {
 
   final List<AttendanceRecord> records;
   final DateTimeRange range;
-  final void Function(String employeeId, DateTime date)? onRegister;
+  final void Function(String employeeName, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,7 @@ class _Row extends StatelessWidget {
   const _Row({required this.employee, required this.days, this.onRegister});
   final _EmployeeRowData employee;
   final List<DateTime> days;
-  final void Function(String employeeId, DateTime date)? onRegister;
+  final void Function(String employeeName, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +128,7 @@ class _Row extends StatelessWidget {
               child: _DayCell(
                 record: employee.byDate[d],
                 date: d,
-                employeeId: employee.id,
+                employeeName: employee.name,
                 onRegister: onRegister,
               ),
             ),
@@ -186,11 +186,11 @@ class _HeaderDayCell extends StatelessWidget {
 }
 
 class _DayCell extends StatelessWidget {
-  const _DayCell({required this.record, required this.date, required this.employeeId, this.onRegister});
+  const _DayCell({required this.record, required this.date, required this.employeeName, this.onRegister});
   final AttendanceRecord? record;
   final DateTime date;
-  final String employeeId;
-  final void Function(String employeeId, DateTime date)? onRegister;
+  final String employeeName;
+  final void Function(String employeeName, DateTime date)? onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +239,7 @@ class _DayCell extends StatelessWidget {
           const SizedBox(height: 4),
           TextButton(
             onPressed: () {
-              onRegister?.call(employeeId, date);
+              onRegister?.call(employeeName, date);
             },
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

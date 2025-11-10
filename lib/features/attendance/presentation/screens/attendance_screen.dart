@@ -189,10 +189,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         : WeeklyAttendanceTable(
                             records: state.records,
                             range: state.filters.dateRange,
-                            onRegister: (employeeId, date) {
+                            onRegister: (employeeName, date) {
                               showDialog(
                                 context: context,
-                                builder: (_) => RegisterOptionsModal(employeeId: employeeId, date: date),
+                                builder: (_) => RegisterOptionsModal(employeeName: employeeName, date: date),
                               );
                             },
                           ),
