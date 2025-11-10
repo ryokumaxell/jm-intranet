@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'manual_entry_modal.dart';
 
 class RegisterOptionsModal extends StatelessWidget {
   const RegisterOptionsModal({super.key, required this.employeeName, required this.date});
@@ -27,18 +26,7 @@ class RegisterOptionsModal extends StatelessWidget {
               Text('Empleado: $employeeName', style: const TextStyle(color: Colors.black54, fontSize: 12)),
               Text('Fecha: ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}', style: const TextStyle(color: Colors.black54, fontSize: 12)),
               const SizedBox(height: 12),
-              ListTile(
-                dense: true,
-                visualDensity: VisualDensity.compact,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.edit, size: 20),
-                title: const Text('Registrar asistencia', style: TextStyle(fontSize: 14)),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  showDialog(context: context, builder: (_) => const ManualEntryModal());
-                },
-              ),
-              const Divider(height: 1),
+              // Opción 'Registrar asistencia' removida por solicitud
               ListTile(
                 dense: true,
                 visualDensity: VisualDensity.compact,
