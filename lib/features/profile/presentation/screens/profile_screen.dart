@@ -123,7 +123,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               onPressed: () async {
                                 final logout = ref.read(logoutUseCaseProvider);
                                 await logout.call();
-                                ref.read(authSessionProvider.notifier).state = null;
+                                ref.read(authSessionProvider.notifier).setSession(null);
                                 if (!mounted) return;
                                 Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                               },

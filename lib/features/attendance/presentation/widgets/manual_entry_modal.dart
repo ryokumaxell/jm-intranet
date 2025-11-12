@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/attendance_record.dart';
 
 class ManualEntryModal extends StatefulWidget {
   const ManualEntryModal({super.key});
@@ -60,7 +59,7 @@ class _ManualEntryModalState extends State<ManualEntryModal> {
                       icon: const Icon(Icons.access_time),
                       label: Text(_time.format(context)),
                       onPressed: () async {
-                        final picked = await showTimePicker(context: context, initialTime: _time);
+                        final picked = await showTimePicker(context: context, initialTime: _time, initialEntryMode: TimePickerEntryMode.input);
                         if (picked != null) setState(() => _time = picked);
                       },
                     ),
@@ -69,7 +68,7 @@ class _ManualEntryModalState extends State<ManualEntryModal> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _type,
+                initialValue: _type,
                 items: const [
                   DropdownMenuItem(value: 'entrada', child: Text('Entrada')),
                   DropdownMenuItem(value: 'salida', child: Text('Salida')),

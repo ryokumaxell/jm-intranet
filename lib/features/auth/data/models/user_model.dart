@@ -5,6 +5,8 @@ class UserModel extends User {
     required super.id,
     required super.name,
     required super.email,
+    required super.role,
+    required super.company,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -12,6 +14,18 @@ class UserModel extends User {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
+      role: json['role'] ?? 'employee',
+      company: json['company'] ?? '',
+    );
+  }
+
+  factory UserModel.fromFirestore(Map<String, dynamic> json, String id) {
+    return UserModel(
+      id: id,
+      name: json['displayName'] ?? '',
+      email: json['email'] ?? '',
+      role: json['role'] ?? 'employee',
+      company: json['company'] ?? '',
     );
   }
 
@@ -20,6 +34,8 @@ class UserModel extends User {
       'id': id,
       'name': name,
       'email': email,
+      'role': role,
+      'company': company,
     };
   }
 }

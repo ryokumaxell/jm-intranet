@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:j_intranet/core/providers/dio_provider.dart';
+import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
+import 'package:j_intranet/features/employees/domain/usecases/register_employee.dart';
 
 import '../../domain/entities/employee.dart';
 import '../../domain/repositories/employee_repository.dart';
@@ -12,17 +14,25 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepositoryImpl(ds);
 });
 
-class EmployeesController extends StateNotifier<List<Employee>> {
-  EmployeesController(this._repo) : super(const []);
-  final EmployeeRepository _repo;
+final registerEmployeeUseCaseProvider = Provider<RegisterEmployee>(
+  (ref) => RegisterEmployee(ref.watch(authRepositoryProvider)),
+);
 
-  Future<void> load() async {
-    final items = await _repo.getEmployees();
-    state = items;
+// Refactor EmployeesController to use AsyncNotifier
+class EmployeesNotifier extends AsyncNotifier<List<Employee>> {
+  late final EmployeeRepository _repo;
+
+  @override
+  Future<List<Employee>> build() async {
+    _repo = ref.watch(employeeRepositoryProvider);
+    return _repo.getEmployees();
+  }
+
+  void load() {
+    ref.invalidateSelf();
   }
 }
 
-final employeesProvider = StateNotifierProvider<EmployeesController, List<Employee>>((ref) {
-  final repo = ref.watch(employeeRepositoryProvider);
-  return EmployeesController(repo);
-});
+final employeesProvider = AsyncNotifierProvider<EmployeesNotifier, List<Employee>>(
+  EmployeesNotifier.new,
+);

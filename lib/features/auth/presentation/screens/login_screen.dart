@@ -1,9 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
-
-import '../providers/auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -58,15 +57,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     try {
       HapticFeedback.lightImpact();
-      final login = ref.read(loginUseCaseProvider);
-      final session = await login.call(_email.text.trim(), _password.text);
-      ref.read(authSessionProvider.notifier).state = session;
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _password.text,
+      );
+      // You can use the credential object if needed, for example:
+      // ref.read(authSessionProvider.notifier).state = credential.user;
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
-    } catch (_) {
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Ocurrió un error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -194,40 +204,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 style: ButtonStyle(
                                   animationDuration:
                                       const Duration(milliseconds: 250), // Transiciones suaves
-                                  elevation: MaterialStateProperty.resolveWith<double>(
+                                  elevation: WidgetStateProperty.resolveWith<double>(
                                     (states) {
-                                      if (states.contains(MaterialState.pressed)) {
+                                      if (states.contains(WidgetState.pressed)) {
                                         return 8; // Sombra más pronunciada
                                       }
                                       return 3;
                                     },
                                   ),
-                                  backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
                                     (states) {
-                                      if (states.contains(MaterialState.disabled)) {
-                                        return Colors.black.withOpacity(0.5); // Deshabilitado 50%
+                                      if (states.contains(WidgetState.disabled)) {
+                                        return Colors.black.withValues(alpha: 0.5); // Deshabilitado 50%
                                       }
-                                      if (states.contains(MaterialState.hovered)) {
+                                      if (states.contains(WidgetState.hovered)) {
                                         return Colors.grey.shade900; // Hover ligeramente más oscuro
                                       }
                                       return Colors.black; // Normal
                                     },
                                   ),
-                                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
-                                  overlayColor: MaterialStateProperty.resolveWith<Color?>(
+                                  foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
+                                  overlayColor: WidgetStateProperty.resolveWith<Color?>(
                                     (states) {
-                                      if (states.contains(MaterialState.pressed)) {
+                                      if (states.contains(WidgetState.pressed)) {
                                         return Colors.white10; // Feedback táctil visual
                                       }
                                       return null;
                                     },
                                   ),
-                                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
-                                  padding: MaterialStateProperty.all<EdgeInsets>(
+                                  padding: WidgetStateProperty.all<EdgeInsets>(
                                     const EdgeInsets.symmetric(horizontal: 16),
                                   ),
                                 ),

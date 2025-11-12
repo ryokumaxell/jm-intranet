@@ -190,8 +190,8 @@ class _$UserProfileImpl implements _UserProfile {
       required this.email,
       this.displayName,
       this.photoURL,
-      required this.role = 'user',
-      required this.company = '',
+      this.role = 'user',
+      this.company = '',
       this.createdAt});
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>

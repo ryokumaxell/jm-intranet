@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dio/dio.dart';
 import 'package:j_intranet/core/providers/dio_provider.dart';
 
 import '../../domain/repositories/auth_repository.dart';
@@ -7,6 +6,7 @@ import '../../domain/entities/auth_session.dart';
 import '../../domain/usecases/login.dart';
 import '../../domain/usecases/logout.dart';
 import '../../domain/usecases/get_current_user.dart';
+import '../../domain/usecases/create_user.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 
@@ -31,4 +31,19 @@ final getCurrentUserUseCaseProvider = Provider<GetCurrentUser>((ref) {
   return GetCurrentUser(repo);
 });
 
-final authSessionProvider = StateProvider<AuthSession?>((ref) => null);
+final createUserUseCaseProvider = Provider<CreateUser>((ref) {
+  final repo = ref.watch(authRepositoryProvider);
+  return CreateUser(repo);
+});
+
+class AuthSessionNotifier extends StateNotifier<AuthSession?> {
+  AuthSessionNotifier() : super(null);
+
+  void setSession(AuthSession? session) {
+    state = session;
+  }
+}
+
+final authSessionProvider = StateNotifierProvider<AuthSessionNotifier, AuthSession?>(
+  (ref) => AuthSessionNotifier(),
+);

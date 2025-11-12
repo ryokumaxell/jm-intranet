@@ -19,6 +19,26 @@ class AttendanceFilters {
     this.page = 0,
     this.pageSize = 10,
   });
+
+  AttendanceFilters copyWith({
+    DateTimeRange? dateRange,
+    String? department,
+    String? query,
+    String? sortBy,
+    bool? ascending,
+    int? page,
+    int? pageSize,
+  }) {
+    return AttendanceFilters(
+      dateRange: dateRange ?? this.dateRange,
+      department: department ?? this.department,
+      query: query ?? this.query,
+      sortBy: sortBy ?? this.sortBy,
+      ascending: ascending ?? this.ascending,
+      page: page ?? this.page,
+      pageSize: pageSize ?? this.pageSize,
+    );
+  }
 }
 
 abstract class AttendanceRepository {

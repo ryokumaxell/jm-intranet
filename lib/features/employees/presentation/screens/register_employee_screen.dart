@@ -126,7 +126,7 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Rol',
                   border: OutlineInputBorder(),
@@ -143,7 +143,7 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
-                value: _selectedCompany,
+                initialValue: _selectedCompany,
                 decoration: const InputDecoration(
                   labelText: 'Empresa',
                   border: OutlineInputBorder(),

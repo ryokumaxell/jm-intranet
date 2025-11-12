@@ -30,6 +30,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   int _company = 0; // 0: Jaysa Muebles, 1: Helaco
 
   @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(() {
+      ref.read(attendanceControllerProvider.notifier).setQuery(_searchCtrl.text);
+    });
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
@@ -170,10 +178,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _WeekLabel(
-                      range: state.filters.dateRange,
-                      onPrev: ctrl.previousWeek,
-                      onNext: ctrl.nextWeek,
+                    state.when(
+                      data: (records) => _WeekLabel(
+                        range: ctrl.filters.dateRange,
+                        onPrev: ctrl.previousWeek,
+                        onNext: ctrl.nextWeek,
+                      ),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (err, stack) => Text('Error: $err'),
                     ),
                   ],
                 ),
@@ -190,18 +202,20 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: state.loading
-                        ? const _TableSkeletonLoader()
-                        : WeeklyAttendanceTable(
-                            records: state.records,
-                            range: state.filters.dateRange,
-                            onRegister: (employeeName, date) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => RegisterOptionsModal(employeeName: employeeName, date: date),
-                              );
-                            },
-                          ),
+                    child: state.when(
+                      data: (records) => WeeklyAttendanceTable(
+                        records: records,
+                        range: ctrl.filters.dateRange,
+                        onRegister: (employeeName, date) {
+                          showDialog(
+                            context: context,
+                            builder: (_) => RegisterOptionsModal(employeeName: employeeName, date: date),
+                          );
+                        },
+                      ),
+                      loading: () => const _TableSkeletonLoader(),
+                      error: (err, stack) => Center(child: Text('Error: $err')),
+                    ),
                   ),
                 ),
               ],

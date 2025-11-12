@@ -51,7 +51,7 @@ class ActivityList extends StatelessWidget {
               final a = activities[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: _typeColor(a.type).withOpacity(0.15),
+                  backgroundColor: _typeColor(a.type).withAlpha(38),
                   child: Icon(Icons.circle, color: _typeColor(a.type), size: 12),
                 ),
                 title: Text(a.title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w500)),

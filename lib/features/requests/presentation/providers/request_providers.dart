@@ -30,29 +30,41 @@ final cancelRequestUseCaseProvider = Provider<CancelRequest>((ref) {
   return CancelRequest(repo);
 });
 
-class RequestsController extends StateNotifier<List<Request>> {
-  RequestsController(this._repository) : super(const []);
+// Refactor RequestsController to use AsyncNotifier
+class RequestsNotifier extends AsyncNotifier<List<Request>> {
+  late final RequestRepository _repository;
 
-  final RequestRepository _repository;
+  @override
+  Future<List<Request>> build() async {
+    _repository = ref.watch(requestRepositoryProvider);
+    return _repository.getRequests();
+  }
 
-  Future<void> load() async {
-    final items = await _repository.getRequests();
-    state = items;
+  void load() {
+    ref.invalidateSelf();
   }
 
   Future<void> add(String type) async {
-    final req = await _repository.createRequest(type: type);
-    state = [...state, req];
+    state = const AsyncValue.loading();
+    try {
+      final req = await _repository.createRequest(type: type);
+      state = AsyncValue.data([...state.value!, req]);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 
   Future<void> cancel(String id) async {
-    await _repository.cancelRequest(id);
-    state = state.where((e) => e.id != id).toList();
+    state = const AsyncValue.loading();
+    try {
+      await _repository.cancelRequest(id);
+      state = AsyncValue.data(state.value!.where((e) => e.id != id).toList());
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 }
 
-final requestsProvider =
-    StateNotifierProvider<RequestsController, List<Request>>((ref) {
-  final repo = ref.watch(requestRepositoryProvider);
-  return RequestsController(repo);
-});
+final requestsProvider = AsyncNotifierProvider<RequestsNotifier, List<Request>>(
+  RequestsNotifier.new,
+);

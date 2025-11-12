@@ -10,34 +10,47 @@ import '../../domain/usecases/get_attendance_records.dart';
 import '../../data/datasources/attendance_remote_data_source.dart';
 import '../../data/datasources/attendance_local_data_source.dart';
 import '../../data/repositories/attendance_repository_impl.dart';
+import '../../domain/repositories/attendance_repository.dart' show AttendanceFilters; // Import AttendanceFilters from here
 
-class AttendanceState {
-  final List<AttendanceRecord> records;
-  final bool loading;
-  final String? error;
-  final AttendanceFilters filters;
+// class AttendanceFilters {
+//   final DateTimeRange dateRange;
+//   final String? department;
+//   final String? query;
+//   final String? sortBy;
+//   final bool ascending;
+//   final int page;
+//   final int pageSize;
 
-  const AttendanceState({
-    required this.records,
-    required this.loading,
-    this.error,
-    required this.filters,
-  });
+//   const AttendanceFilters({
+//     required this.dateRange,
+//     this.department,
+//     this.query,
+//     this.sortBy,
+//     this.ascending = true,
+//     this.page = 0,
+//     this.pageSize = 10,
+//   });
 
-  AttendanceState copyWith({
-    List<AttendanceRecord>? records,
-    bool? loading,
-    String? error,
-    AttendanceFilters? filters,
-  }) {
-    return AttendanceState(
-      records: records ?? this.records,
-      loading: loading ?? this.loading,
-      error: error,
-      filters: filters ?? this.filters,
-    );
-  }
-}
+//   AttendanceFilters copyWith({
+//     DateTimeRange? dateRange,
+//     String? department,
+//     String? query,
+//     String? sortBy,
+//     bool? ascending,
+//     int? page,
+//     int? pageSize,
+//   }) {
+//     return AttendanceFilters(
+//       dateRange: dateRange ?? this.dateRange,
+//       department: department ?? this.department,
+//       query: query ?? this.query,
+//       sortBy: sortBy ?? this.sortBy,
+//       ascending: ascending ?? this.ascending,
+//       page: page ?? this.page,
+//       pageSize: pageSize ?? this.pageSize,
+//     );
+//   }
+// }
 
 final attendanceRepositoryProvider = Provider<AttendanceRepository>((ref) {
   final dio = ref.watch(dioProvider);
@@ -52,133 +65,79 @@ final getAttendanceUseCaseProvider = Provider<GetAttendanceRecords>((ref) {
   return GetAttendanceRecords(repo);
 });
 
-class AttendanceController extends StateNotifier<AttendanceState> {
-  AttendanceController(this._get) : super(_initialState()) {
-    load();
-  }
+class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
+  AttendanceFilters _filters = _initialFilters();
 
-  static AttendanceState _initialState() {
+  AttendanceFilters get filters => _filters;
+
+  static AttendanceFilters _initialFilters() {
     final now = DateTime.now();
-    // Alinear a la semana actual (lunes a sábado)
     final monday = now.subtract(Duration(days: (now.weekday - DateTime.monday) % 7));
     final saturday = DateTime(monday.year, monday.month, monday.day).add(const Duration(days: 5));
     final range = DateTimeRange(start: monday, end: saturday);
-    return AttendanceState(
-      records: const [],
-      loading: false,
-      filters: AttendanceFilters(dateRange: range),
-    );
+    return AttendanceFilters(dateRange: range);
   }
 
-  final GetAttendanceRecords _get;
-  Timer? _debounce;
+  @override
+  Future<List<AttendanceRecord>> build() async {
+    return _fetchAttendanceRecords();
+  }
+
+  Future<List<AttendanceRecord>> _fetchAttendanceRecords() async {
+    final getAttendanceRecords = ref.watch(getAttendanceUseCaseProvider);
+    return await getAttendanceRecords.call(_filters);
+  }
 
   Future<void> load() async {
-    state = state.copyWith(loading: true, error: null);
-    try {
-      final items = await _get.call(state.filters);
-      state = state.copyWith(records: items, loading: false);
-    } catch (e) {
-      state = state.copyWith(loading: false, error: e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => _fetchAttendanceRecords());
   }
 
   void setQuery(String query) {
-    final filters = AttendanceFilters(
-      dateRange: state.filters.dateRange,
-      department: state.filters.department,
-      query: query,
-      sortBy: state.filters.sortBy,
-      ascending: state.filters.ascending,
-      page: 0,
-      pageSize: state.filters.pageSize,
-    );
-    state = state.copyWith(filters: filters);
+    _filters = _filters.copyWith(query: query, page: 0);
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), load);
+    _debounce = Timer(const Duration(milliseconds: 300), () => load());
   }
 
   void setDepartment(String? dept) {
-    state = state.copyWith(
-      filters: AttendanceFilters(
-        dateRange: state.filters.dateRange,
-        department: dept,
-        query: state.filters.query,
-        sortBy: state.filters.sortBy,
-        ascending: state.filters.ascending,
-        page: 0,
-        pageSize: state.filters.pageSize,
-      ),
-    );
+    _filters = _filters.copyWith(department: dept, page: 0);
+    load();
   }
 
   void setDateRange(DateTimeRange range) {
-    // Normalizar siempre a lunes-sábado de la semana del rango seleccionado
     final anchor = range.start;
     final monday = anchor.subtract(Duration(days: (anchor.weekday - DateTime.monday) % 7));
     final saturday = DateTime(monday.year, monday.month, monday.day).add(const Duration(days: 5));
     final normalized = DateTimeRange(start: monday, end: saturday);
-    state = state.copyWith(
-      filters: AttendanceFilters(
-        dateRange: normalized,
-        department: state.filters.department,
-        query: state.filters.query,
-        sortBy: state.filters.sortBy,
-        ascending: state.filters.ascending,
-        page: 0,
-        pageSize: state.filters.pageSize,
-      ),
-    );
+    _filters = _filters.copyWith(dateRange: normalized, page: 0);
+    load();
   }
 
   void setSort(String by, bool asc) {
-    state = state.copyWith(
-      filters: AttendanceFilters(
-        dateRange: state.filters.dateRange,
-        department: state.filters.department,
-        query: state.filters.query,
-        sortBy: by,
-        ascending: asc,
-        page: state.filters.page,
-        pageSize: state.filters.pageSize,
-      ),
-    );
+    _filters = _filters.copyWith(sortBy: by, ascending: asc);
     load();
   }
 
   void setPage(int page) {
-    state = state.copyWith(
-      filters: AttendanceFilters(
-        dateRange: state.filters.dateRange,
-        department: state.filters.department,
-        query: state.filters.query,
-        sortBy: state.filters.sortBy,
-        ascending: state.filters.ascending,
-        page: page,
-        pageSize: state.filters.pageSize,
-      ),
-    );
+    _filters = _filters.copyWith(page: page);
     load();
   }
 
-  // Navegación semanal: mueve el rango una semana hacia atrás
   void previousWeek() {
-    final start = state.filters.dateRange.start.subtract(const Duration(days: 7));
-    final end = state.filters.dateRange.end.subtract(const Duration(days: 7));
+    final start = _filters.dateRange.start.subtract(const Duration(days: 7));
+    final end = _filters.dateRange.end.subtract(const Duration(days: 7));
     setDateRange(DateTimeRange(start: start, end: end));
-    load();
   }
 
-  // Navegación semanal: mueve el rango una semana hacia adelante
   void nextWeek() {
-    final start = state.filters.dateRange.start.add(const Duration(days: 7));
-    final end = state.filters.dateRange.end.add(const Duration(days: 7));
+    final start = _filters.dateRange.start.add(const Duration(days: 7));
+    final end = _filters.dateRange.end.add(const Duration(days: 7));
     setDateRange(DateTimeRange(start: start, end: end));
-    load();
   }
+
+  Timer? _debounce;
 }
 
-final attendanceControllerProvider = StateNotifierProvider<AttendanceController, AttendanceState>((ref) {
-  final get = ref.watch(getAttendanceUseCaseProvider);
-  return AttendanceController(get);
+final attendanceControllerProvider = AsyncNotifierProvider<AttendanceNotifier, List<AttendanceRecord>>(() {
+  return AttendanceNotifier();
 });

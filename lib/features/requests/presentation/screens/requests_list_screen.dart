@@ -23,19 +23,14 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar datos iniciales
-    Future.microtask(() => ref.read(requestsProvider.notifier).load());
+    // La carga inicial de datos ahora se maneja en el build de RequestsNotifier
   }
 
   @override
   Widget build(BuildContext context) {
-    final requests = ref.watch(requestsProvider);
+    final requestsAsyncValue = ref.watch(requestsProvider);
     final session = ref.watch(authSessionProvider);
-    final permisosPendientes = requests.where((e) => e.type == 'permission' && e.status == 'pending').toList();
-    final vacaciones = requests.where((e) => e.type == 'vacation').toList();
-    final tardanzas = requests.where((e) => e.type == 'tardiness').toList();
 
-    // Vista única y bien distribuida (sin pestañas): secciones en grilla responsiva
     return Scaffold(
       appBar: AppBar(
         title: const Text('Solicitudes'),
@@ -122,30 +117,40 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
             ],
           ),
         ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          int cols = 1;
-          if (w >= 1200) cols = 3; else if (w >= 800) cols = 2;
-          final sections = [
-            _RequestsSection(title: 'Permisos pendientes', items: permisosPendientes),
-            _RequestsSection(title: 'Vacaciones', items: vacaciones),
-            _TardinessSection(items: tardanzas),
-          ];
-          return Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: cols,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.2,
-              ),
-              itemCount: sections.length,
-              itemBuilder: (context, index) => sections[index],
-            ),
+      body: requestsAsyncValue.when(
+        data: (requests) {
+          final permisosPendientes = requests.where((e) => e.type == 'permission' && e.status == 'pending').toList();
+          final vacaciones = requests.where((e) => e.type == 'vacation').toList();
+          final tardanzas = requests.where((e) => e.type == 'tardiness').toList();
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              int cols = 1;
+              if (w >= 1200) cols = 3; else if (w >= 800) cols = 2;
+              final sections = [
+                _RequestsSection(title: 'Permisos pendientes', items: permisosPendientes),
+                _RequestsSection(title: 'Vacaciones', items: vacaciones),
+                _TardinessSection(items: tardanzas),
+              ];
+              return Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                  ),
+                  itemCount: sections.length,
+                  itemBuilder: (context, index) => sections[index],
+                ),
+              );
+            },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {

@@ -13,6 +13,7 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _companyController = TextEditingController(); // Add this line
   String _selectedRole = 'employee';
 
   @override
@@ -48,8 +49,18 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
                   return null;
                 },
               ),
+              TextFormField( // Add this TextFormField
+                controller: _companyController,
+                decoration: const InputDecoration(labelText: 'Compañía'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, ingrese una compañía';
+                  }
+                  return null;
+                },
+              ),
               DropdownButtonFormField<String>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 items: ['admin', 'employee'].map((role) {
                   return DropdownMenuItem(value: role, child: Text(role));
                 }).toList(),
@@ -69,6 +80,7 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
                             _emailController.text,
                             _passwordController.text,
                             _selectedRole,
+                            _companyController.text, // Add this line
                           );
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Usuario creado con éxito')),

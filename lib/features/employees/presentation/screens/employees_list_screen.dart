@@ -23,16 +23,13 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(employeesProvider.notifier).load());
+    // La carga inicial de datos ahora se maneja en el build de EmployeesNotifier
   }
 
   @override
   Widget build(BuildContext context) {
-    final employees = ref.watch(employeesProvider);
+    final employeesAsyncValue = ref.watch(employeesProvider);
     final session = ref.watch(authSessionProvider);
-
-    final jaysa = employees.where((e) => e.company == 'Jaysa Muebles').toList();
-    final helaco = employees.where((e) => e.company == 'Helaco').toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -112,13 +109,22 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          _CompanySection(title: 'Jaysa Muebles', employees: jaysa),
-          const SizedBox(height: 12),
-          _CompanySection(title: 'Helaco', employees: helaco),
-        ],
+      body: employeesAsyncValue.when(
+        data: (employees) {
+          final jaysa = employees.where((e) => e.company == 'Jaysa Muebles').toList();
+          final helaco = employees.where((e) => e.company == 'Helaco').toList();
+
+          return ListView(
+            padding: const EdgeInsets.all(12),
+            children: [
+              _CompanySection(title: 'Jaysa Muebles', employees: jaysa),
+              const SizedBox(height: 12),
+              _CompanySection(title: 'Helaco', employees: helaco),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }

@@ -8,12 +8,15 @@ import 'package:j_intranet/features/requests/presentation/screens/requests_list_
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
 import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
 import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
+import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import 'package:j_intranet/core/providers/theme_provider.dart';
 import 'package:j_intranet/features/employees/presentation/providers/employee_providers.dart';
 import 'package:j_intranet/features/requests/presentation/providers/request_providers.dart';
 import 'package:j_intranet/features/attendance/presentation/providers/attendance_providers.dart';
 import 'package:j_intranet/features/attendance/domain/entities/attendance_record.dart';
 import 'package:j_intranet/features/dashboard/domain/entities/metric.dart';
+import 'package:j_intranet/features/requests/domain/entities/request.dart';
+import 'package:j_intranet/features/employees/domain/entities/employee.dart';
 
 import '../providers/dashboard_providers.dart';
 import '../widgets/summary_card.dart';
@@ -86,9 +89,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             tooltip: 'Modo oscuro',
             icon: const Icon(Icons.dark_mode_outlined),
             onPressed: () {
-              final current = ref.read(themeModeProvider);
-              ref.read(themeModeProvider.notifier).state =
-                  current == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+              ref.read(themeModeProvider.notifier).toggleTheme();
             },
           ),
           const SizedBox(width: 8),
@@ -150,6 +151,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             ),
             _DrawerItem(
+              icon: Icons.person_outline,
+              title: 'Perfil',
+              selected: _selectedDrawerIndex == 2,
+              onTap: () {
+                setState(() => _selectedDrawerIndex = 2);
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
+            _DrawerItem(
               icon: Icons.settings_outlined,
               title: 'Ajustes',
               selected: _selectedDrawerIndex == 3,
@@ -157,7 +170,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 setState(() => _selectedDrawerIndex = 3);
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 );
               },
             ),
@@ -173,7 +186,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     onPressed: () async {
                       final logout = ref.read(logoutUseCaseProvider);
                       await logout.call();
-                      ref.read(authSessionProvider.notifier).state = null;
+                      ref.read(authSessionProvider.notifier).setSession(null);
                       if (!mounted) return;
                       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                     },
@@ -238,13 +251,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   List<Metric> _buildMetrics(BuildContext context) {
-    final att = ref.watch(attendanceControllerProvider);
+    final attAsync = ref.watch(attendanceControllerProvider);
     final employees = ref.watch(employeesProvider);
-    final requests = ref.watch(requestsProvider);
+    final requestsAsync = ref.watch(requestsProvider);
+
+    final List<AttendanceRecord> attRecords = attAsync.when(
+      data: (data) => data,
+      loading: () => [],
+      error: (err, stack) => [],
+    );
+
+    final List<Request> requests = requestsAsync.when(
+      data: (data) => data,
+      loading: () => [],
+      error: (err, stack) => [],
+    );
+
+    final List<Employee> employeesList = employees.when(
+      data: (data) => data,
+      loading: () => [],
+      error: (err, stack) => [],
+    );
 
     // Mapear empleado -> empresa
     final companyByEmployee = <String, String>{
-      for (final e in employees) e.id: e.company,
+      for (final e in employeesList) e.id: e.company,
     };
 
     // Calcular promedio semanal de tardanzas (minutos) por empresa, asumiendo jornada inicia 9:00
@@ -255,7 +286,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return diff > 0 ? diff : 0;
     }
 
-    final lateRecords = att.records.where((r) => r.status == AttendanceStatus.late).toList();
+    final lateRecords = attRecords.where((r) => r.status == AttendanceStatus.late).toList();
     final jaysaLate = lateRecords.where((r) => companyByEmployee[r.employeeId] == 'Jaysa Muebles').toList();
     final helacoLate = lateRecords.where((r) => companyByEmployee[r.employeeId] == 'Helaco').toList();
     final jaysaAvg = jaysaLate.isEmpty
@@ -266,14 +297,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         : (helacoLate.map((r) => tardyMinutes(r.entry)).reduce((a, b) => a + b) / helacoLate.length).round();
 
     // Vacaciones próximas (demo: contar solicitudes de vacaciones pendientes)
-    final upcomingVacations = requests.where((r) => r.type == 'vacation' && r.status == 'pending').length;
+    final upcomingVacations = requests.where((r) => r.type == RequestType.vacation && r.status == RequestStatus.pending).length;
 
     // Empleados en licencia y en vacaciones esta semana (desde asistencia)
-    final onLeave = att.records.where((r) => r.status == AttendanceStatus.leave).map((r) => r.employeeId).toSet().length;
-    final onVacation = att.records.where((r) => r.status == AttendanceStatus.vacation).map((r) => r.employeeId).toSet().length;
+    final onLeave = attRecords.where((r) => r.status == AttendanceStatus.leave).map((r) => r.employeeId).toSet().length;
+    final onVacation = attRecords.where((r) => r.status == AttendanceStatus.vacation).map((r) => r.employeeId).toSet().length;
 
     // Permisos próximos (demo: solicitudes de permiso pendientes)
-    final upcomingPermissions = requests.where((r) => r.type == 'permission' && r.status == 'pending').length;
+    final upcomingPermissions = requests.where((r) => r.type == RequestType.permission && r.status == RequestStatus.pending).length;
 
     return [
       Metric(
