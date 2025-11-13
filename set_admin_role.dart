@@ -15,10 +15,10 @@ void main() async {
     );
 
     final firestore = FirebaseFirestore.instance;
-    final userRef = firestore.collection('users').doc('fHdphyxWx6frF26fVTUhPFI0yRF2');
+    final userRef =
+        firestore.collection('users').doc('fHdphyxWx6frF26fVTUhPFI0yRF2');
 
     await userRef.set({
-      'email': 'lacosta@jaysa.com',
       'role': 'admin',
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true)); // Add merge option

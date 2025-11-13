@@ -79,7 +79,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: const Icon(Icons.business, color: Colors.white, size: 16),
             ),
             const SizedBox(width: 8),
-            const Text('Panel Principal', style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text('Panel Principal',
+                style: TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
         actions: [
@@ -101,7 +102,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
+              currentAccountPicture:
+                  const CircleAvatar(child: Icon(Icons.person)),
               accountName: Text(session?.user.name ?? 'Invitado'),
               accountEmail: Text(session?.user.email ?? ''),
             ),
@@ -122,7 +124,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 setState(() => _selectedDrawerIndex = 5);
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const EmployeesListScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const EmployeesListScreen()),
                 );
               },
             ),
@@ -168,7 +171,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  Text('${AppConstants.appName} v0.1.0', style: AppTextStyles.small.copyWith(color: Colors.black54)),
+                  Text('${AppConstants.appName} v0.1.0',
+                      style:
+                          AppTextStyles.small.copyWith(color: Colors.black54)),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: () async {
@@ -176,7 +181,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       await logout.call();
                       ref.read(authSessionProvider.notifier).setSession(null);
                       if (!mounted) return;
-                      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/', (route) => false);
                     },
                     icon: const Icon(Icons.logout),
                     label: const Text('Salir'),
@@ -194,7 +200,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(horizontalPadding, 24, horizontalPadding, 16),
+                padding: EdgeInsets.fromLTRB(
+                    horizontalPadding, 24, horizontalPadding, 16),
                 sliver: SliverGrid(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: cols,
@@ -220,13 +227,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
               SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding, vertical: 8),
                 sliver: SliverToBoxAdapter(
                   child: ChartPlaceholder(title: 'Gráfico de estadísticas'),
                 ),
               ),
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 24),
+                padding: EdgeInsets.fromLTRB(
+                    horizontalPadding, 8, horizontalPadding, 24),
                 sliver: SliverToBoxAdapter(
                   child: ActivityList(activities: activities),
                 ),
@@ -274,25 +283,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return diff > 0 ? diff : 0;
     }
 
-    final lateRecords = attRecords.where((r) => r.status == AttendanceStatus.late).toList();
-    final jaysaLate = lateRecords.where((r) => companyByEmployee[r.employeeId] == 'Jaysa Muebles').toList();
-    final helacoLate = lateRecords.where((r) => companyByEmployee[r.employeeId] == 'Helaco').toList();
+    final lateRecords =
+        attRecords.where((r) => r.status == AttendanceStatus.late).toList();
+    final jaysaLate = lateRecords
+        .where((r) => companyByEmployee[r.employeeId] == 'Jaysa Muebles')
+        .toList();
+    final helacoLate = lateRecords
+        .where((r) => companyByEmployee[r.employeeId] == 'Helaco')
+        .toList();
     final jaysaAvg = jaysaLate.isEmpty
         ? 0
-        : (jaysaLate.map((r) => tardyMinutes(r.entry)).reduce((a, b) => a + b) / jaysaLate.length).round();
+        : (jaysaLate.map((r) => tardyMinutes(r.entry)).reduce((a, b) => a + b) /
+                jaysaLate.length)
+            .round();
     final helacoAvg = helacoLate.isEmpty
         ? 0
-        : (helacoLate.map((r) => tardyMinutes(r.entry)).reduce((a, b) => a + b) / helacoLate.length).round();
+        : (helacoLate
+                    .map((r) => tardyMinutes(r.entry))
+                    .reduce((a, b) => a + b) /
+                helacoLate.length)
+            .round();
 
     // Vacaciones próximas (demo: contar solicitudes de vacaciones pendientes)
-    final upcomingVacations = requests.where((r) => r.type == RequestType.vacation && r.status == RequestStatus.pending).length;
+    final upcomingVacations = requests
+        .where((r) =>
+            r.type == RequestType.vacation && r.status == RequestStatus.pending)
+        .length;
 
     // Empleados en licencia y en vacaciones esta semana (desde asistencia)
-    final onLeave = attRecords.where((r) => r.status == AttendanceStatus.leave).map((r) => r.employeeId).toSet().length;
-    final onVacation = attRecords.where((r) => r.status == AttendanceStatus.vacation).map((r) => r.employeeId).toSet().length;
+    final onLeave = attRecords
+        .where((r) => r.status == AttendanceStatus.leave)
+        .map((r) => r.employeeId)
+        .toSet()
+        .length;
+    final onVacation = attRecords
+        .where((r) => r.status == AttendanceStatus.vacation)
+        .map((r) => r.employeeId)
+        .toSet()
+        .length;
 
     // Permisos próximos (demo: solicitudes de permiso pendientes)
-    final upcomingPermissions = requests.where((r) => r.type == RequestType.permission && r.status == RequestStatus.pending).length;
+    final upcomingPermissions = requests
+        .where((r) =>
+            r.type == RequestType.permission &&
+            r.status == RequestStatus.pending)
+        .length;
 
     return [
       Metric(

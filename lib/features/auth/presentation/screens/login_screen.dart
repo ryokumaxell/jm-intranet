@@ -90,6 +90,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final outerPadding = EdgeInsets.all(isMobile ? 16 : 24);
+    final logoSize = isMobile ? 140.0 : 200.0;
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50, // Fondo claro
@@ -105,7 +106,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Card(
                     elevation: 8, // Sombra del contenedor
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12), // Bordes redondeados
+                      borderRadius:
+                          BorderRadius.circular(12), // Bordes redondeados
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(24), // Padding general
@@ -121,17 +123,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  const CircleAvatar(
-                                    radius: 28,
-                                    child: Icon(Icons.business, size: 28),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  const Text(
-                                    'INTRANET',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Image.asset(
+                                      'assent/Logo-jaysaintranet.png',
+                                      height: logoSize,
+                                      fit: BoxFit.contain,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -174,7 +171,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 labelText: 'Contraseña',
                                 prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
-                                  tooltip: _passwordVisible ? 'Ocultar' : 'Mostrar',
+                                  tooltip:
+                                      _passwordVisible ? 'Ocultar' : 'Mostrar',
                                   icon: Icon(
                                     _passwordVisible
                                         ? Icons.visibility_off
@@ -202,37 +200,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: ElevatedButton(
                                 onPressed: _canSubmit ? _performLogin : null,
                                 style: ButtonStyle(
-                                  animationDuration:
-                                      const Duration(milliseconds: 250), // Transiciones suaves
-                                  elevation: WidgetStateProperty.resolveWith<double>(
+                                  animationDuration: const Duration(
+                                      milliseconds: 250), // Transiciones suaves
+                                  elevation:
+                                      WidgetStateProperty.resolveWith<double>(
                                     (states) {
-                                      if (states.contains(WidgetState.pressed)) {
+                                      if (states
+                                          .contains(WidgetState.pressed)) {
                                         return 8; // Sombra más pronunciada
                                       }
                                       return 3;
                                     },
                                   ),
-                                  backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                                  backgroundColor:
+                                      WidgetStateProperty.resolveWith<Color>(
                                     (states) {
-                                      if (states.contains(WidgetState.disabled)) {
-                                        return Colors.black.withValues(alpha: 0.5); // Deshabilitado 50%
+                                      if (states
+                                          .contains(WidgetState.disabled)) {
+                                        return Colors.black.withValues(
+                                            alpha: 0.5); // Deshabilitado 50%
                                       }
-                                      if (states.contains(WidgetState.hovered)) {
-                                        return Colors.grey.shade900; // Hover ligeramente más oscuro
+                                      if (states
+                                          .contains(WidgetState.hovered)) {
+                                        return Colors.grey
+                                            .shade900; // Hover ligeramente más oscuro
                                       }
                                       return Colors.black; // Normal
                                     },
                                   ),
-                                  foregroundColor: WidgetStateProperty.all<Color>(Colors.white),
-                                  overlayColor: WidgetStateProperty.resolveWith<Color?>(
+                                  foregroundColor:
+                                      WidgetStateProperty.all<Color>(
+                                          Colors.white),
+                                  overlayColor:
+                                      WidgetStateProperty.resolveWith<Color?>(
                                     (states) {
-                                      if (states.contains(WidgetState.pressed)) {
-                                        return Colors.white10; // Feedback táctil visual
+                                      if (states
+                                          .contains(WidgetState.pressed)) {
+                                        return Colors
+                                            .white10; // Feedback táctil visual
                                       }
                                       return null;
                                     },
                                   ),
-                                  shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                                  shape: WidgetStateProperty.all<
+                                      RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -257,13 +268,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         )
                                       : Row(
                                           key: const ValueKey('label'),
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: const [
-                                            Icon(Icons.arrow_forward_rounded, size: 20),
+                                            Icon(Icons.arrow_forward_rounded,
+                                                size: 20),
                                             SizedBox(width: 8),
                                             Text(
                                               'Acceder',
-                                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500),
                                             ),
                                           ],
                                         ),
