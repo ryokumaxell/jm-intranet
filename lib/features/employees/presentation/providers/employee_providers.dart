@@ -20,12 +20,10 @@ final registerEmployeeUseCaseProvider = Provider<RegisterEmployee>(
 
 // Refactor EmployeesController to use AsyncNotifier
 class EmployeesNotifier extends AsyncNotifier<List<Employee>> {
-  late final EmployeeRepository _repo;
-
   @override
   Future<List<Employee>> build() async {
-    _repo = ref.watch(employeeRepositoryProvider);
-    return _repo.getEmployees();
+    final repo = ref.watch(employeeRepositoryProvider);
+    return repo.getEmployees();
   }
 
   void load() {

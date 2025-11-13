@@ -5,7 +5,7 @@ import 'package:j_intranet/core/constants/app_constants.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
 import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
-import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
+import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 
 import '../providers/request_providers.dart';
@@ -58,7 +58,7 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
               ),
               ListTile(
                 leading: const Icon(Icons.dashboard_outlined),
-                title: const Text('Inicio'),
+                title: const Text('Panel principal'),
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.of(context).push(
@@ -100,7 +100,7 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
                   );
                 },
               ),
@@ -119,9 +119,9 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
         ),
       body: requestsAsyncValue.when(
         data: (requests) {
-          final permisosPendientes = requests.where((e) => e.type == 'permission' && e.status == 'pending').toList();
-          final vacaciones = requests.where((e) => e.type == 'vacation').toList();
-          final tardanzas = requests.where((e) => e.type == 'tardiness').toList();
+          final permisosPendientes = requests.where((e) => e.type == RequestType.permission && e.status == RequestStatus.pending).toList();
+          final vacaciones = requests.where((e) => e.type == RequestType.vacation).toList();
+          final tardanzas = requests.where((e) => e.type == RequestType.tardiness).toList();
 
           return LayoutBuilder(
             builder: (context, constraints) {
@@ -175,7 +175,8 @@ class _RequestsSection extends StatelessWidget {
       elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -194,6 +195,7 @@ class _RequestsSection extends StatelessWidget {
                     },
                   )),
           ],
+          ),
         ),
       ),
     );
@@ -210,7 +212,8 @@ class _TardinessSection extends StatelessWidget {
       elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Internas (Tardanzas)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -244,6 +247,7 @@ class _TardinessSection extends StatelessWidget {
                     ),
                   )),
           ],
+          ),
         ),
       ),
     );

@@ -144,7 +144,7 @@ class _RowItemState extends State<_RowItem> {
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 60,
-          color: widget.hovered ? Colors.black.withOpacity(0.02) : Colors.transparent,
+          color: widget.hovered ? Colors.black.withValues(alpha: 0.02) : Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [

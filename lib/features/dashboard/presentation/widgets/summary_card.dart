@@ -54,7 +54,7 @@ class _SummaryCardState extends State<SummaryCard> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: widget.accentColor.withOpacity(0.12),
+                          color: widget.accentColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         padding: const EdgeInsets.all(8),

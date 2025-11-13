@@ -7,7 +7,7 @@ import 'package:j_intranet/core/constants/app_constants.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:j_intranet/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
-import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
+import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 
 import '../providers/attendance_providers.dart';
@@ -80,7 +80,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Inicio'),
+              title: const Text('Panel principal'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
@@ -122,7 +122,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 );
               },
             ),

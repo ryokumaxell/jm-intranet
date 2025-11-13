@@ -1,19 +1,31 @@
 import 'package:dio/dio.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../domain/entities/employee.dart';
 import '../models/employee_model.dart';
 
 class EmployeesRemoteDataSource {
   // ignore: unused_field
   final Dio _dio;
-  EmployeesRemoteDataSource(this._dio);
+  final FirebaseFirestore _firestore;
+  EmployeesRemoteDataSource(this._dio) : _firestore = FirebaseFirestore.instance;
 
-  Future<List<EmployeeModel>> getEmployees() async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return const [
-      EmployeeModel(id: 'EMP-001', name: 'Juan Pérez', department: 'Ventas', company: 'Jaysa Muebles'),
-      EmployeeModel(id: 'EMP-002', name: 'María López', department: 'Recursos Humanos', company: 'Jaysa Muebles'),
-      EmployeeModel(id: 'EMP-003', name: 'Carlos Ruiz', department: 'Operaciones', company: 'Helaco'),
-      EmployeeModel(id: 'EMP-004', name: 'Ana García', department: 'Logística', company: 'Helaco'),
-    ];
+  Future<List<Employee>> getEmployees() async {
+    final companyIds = <String>['jaysa_muebles', 'helaco'];
+    final snapshots = await Future.wait(
+      companyIds.map((c) => _firestore.collection('companies').doc(c).collection('employees').get()),
+    );
+    final docs = snapshots.expand((s) => s.docs);
+    return docs
+        .map((d) {
+          final data = d.data();
+          return EmployeeModel(
+            id: d.id,
+            name: (data['name'] ?? '').toString(),
+            department: (data['department'] ?? '').toString(),
+            company: (data['company'] ?? '').toString(),
+          );
+        })
+        .toList();
   }
 }

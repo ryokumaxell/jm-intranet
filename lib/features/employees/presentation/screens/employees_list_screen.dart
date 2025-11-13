@@ -6,15 +6,14 @@ import 'package:j_intranet/features/auth/presentation/providers/auth_providers.d
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:j_intranet/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
-import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
-
+import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import '../../domain/entities/employee.dart';
 import '../providers/employee_providers.dart';
 import 'employee_detail_screen.dart';
 
 class EmployeesListScreen extends ConsumerStatefulWidget {
   const EmployeesListScreen({super.key});
-
+  
   @override
   ConsumerState<EmployeesListScreen> createState() => _EmployeesListScreenState();
 }
@@ -58,10 +57,12 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.dashboard_outlined),
-              title: const Text('Inicio'),
+              title: const Text('Panel principal'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const DashboardScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                );
               },
             ),
             ListTile(
@@ -77,7 +78,9 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
               title: const Text('Solicitudes'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RequestsListScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RequestsListScreen()),
+                );
               },
             ),
             ListTile(
@@ -85,7 +88,9 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
               title: const Text('Asistencia'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AttendanceScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+                );
               },
             ),
             ListTile(
@@ -93,7 +98,9 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
               title: const Text('Ajustes'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
               },
             ),
             const Spacer(),
@@ -102,7 +109,10 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  Text('${AppConstants.appName} v0.1.0', style: AppTextStyles.small.copyWith(color: Colors.black54)),
+                  Text(
+                    '${AppConstants.appName} v0.1.0',
+                    style: AppTextStyles.small.copyWith(color: Colors.black54),
+                  ),
                 ],
               ),
             ),
@@ -113,7 +123,7 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
         data: (employees) {
           final jaysa = employees.where((e) => e.company == 'Jaysa Muebles').toList();
           final helaco = employees.where((e) => e.company == 'Helaco').toList();
-
+          
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
@@ -133,7 +143,11 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
 class _CompanySection extends StatelessWidget {
   final String title;
   final List<Employee> employees;
-  const _CompanySection({required this.title, required this.employees});
+
+  const _CompanySection({
+    required this.title,
+    required this.employees,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +158,10 @@ class _CompanySection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             if (employees.isEmpty)
               const Text('Sin empleados', style: TextStyle(color: Colors.black54))
@@ -156,7 +173,9 @@ class _CompanySection extends StatelessWidget {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => EmployeeDetailScreen(employee: e)),
+                        MaterialPageRoute(
+                          builder: (_) => EmployeeDetailScreen(employee: e),
+                        ),
                       );
                     },
                   )),

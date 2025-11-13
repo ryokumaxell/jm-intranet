@@ -8,18 +8,26 @@ class RequestModel extends Request {
   });
 
   factory RequestModel.fromJson(Map<String, dynamic> json) {
+    final typeStr = json['type']?.toString() ?? 'other';
+    final statusStr = json['status']?.toString() ?? 'pending';
     return RequestModel(
       id: json['id']?.toString() ?? '',
-      type: json['type'] ?? '',
-      status: json['status'] ?? '',
+      type: RequestType.values.firstWhere(
+        (e) => e.name == typeStr,
+        orElse: () => RequestType.other,
+      ),
+      status: RequestStatus.values.firstWhere(
+        (e) => e.name == statusStr,
+        orElse: () => RequestStatus.pending,
+      ),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'type': type,
-      'status': status,
+      'type': type.name,
+      'status': status.name,
     };
   }
 }

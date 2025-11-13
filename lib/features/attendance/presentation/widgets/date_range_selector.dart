@@ -18,7 +18,7 @@ class DateRangeSelector extends StatelessWidget {
           initialDateRange: value,
           builder: (context, child) {
             return Theme(
-              data: Theme.of(context).copyWith(useMaterial3: true),
+              data: Theme.of(context).copyWith(),
               child: child!,
             );
           },

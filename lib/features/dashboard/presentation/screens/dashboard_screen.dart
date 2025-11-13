@@ -107,7 +107,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             _DrawerItem(
               icon: Icons.dashboard_outlined,
-              title: 'Inicio',
+              title: 'Panel principal',
               selected: _selectedDrawerIndex == 0,
               onTap: () {
                 setState(() => _selectedDrawerIndex = 0);
@@ -147,18 +147,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AttendanceScreen()),
-                );
-              },
-            ),
-            _DrawerItem(
-              icon: Icons.person_outline,
-              title: 'Perfil',
-              selected: _selectedDrawerIndex == 2,
-              onTap: () {
-                setState(() => _selectedDrawerIndex = 2);
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 );
               },
             ),

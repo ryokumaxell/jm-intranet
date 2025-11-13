@@ -45,20 +45,20 @@ class RequestsNotifier extends AsyncNotifier<List<Request>> {
   }
 
   Future<void> add(String type) async {
-    state = const AsyncValue.loading();
     try {
+      final previous = state.value ?? const <Request>[];
       final req = await _repository.createRequest(type: type);
-      state = AsyncValue.data([...state.value!, req]);
+      state = AsyncValue.data([...previous, req]);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
   Future<void> cancel(String id) async {
-    state = const AsyncValue.loading();
     try {
       await _repository.cancelRequest(id);
-      state = AsyncValue.data(state.value!.where((e) => e.id != id).toList());
+      final previous = state.value ?? const <Request>[];
+      state = AsyncValue.data(previous.where((e) => e.id != id).toList());
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

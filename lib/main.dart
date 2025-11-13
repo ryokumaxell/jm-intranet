@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -12,21 +13,55 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // await setAdminRole(); // This will run only once to set the admin role.
+  await setupAdminUser(); // Configurar usuario admin de forma segura
   runApp(const ProviderScope(child: JIntranetApp()));
 }
 
-Future<void> setAdminRole() async {
-  final firestore = FirebaseFirestore.instance;
-  final userRef = firestore.collection('users').doc('fHdphyxWx6frF26fVTUhPFI0yRF2');
+Future<void> setupAdminUser() async {
+  try {
+    final auth = FirebaseAuth.instance;
+    
+    // Intentar autenticar con el usuario admin primero
+    UserCredential? userCredential;
+    try {
+      userCredential = await auth.signInWithEmailAndPassword(
+        email: 'lacosta@jaysa.com',
+        password: 'Admin123!',
+      );
+    } catch (e) {
+      // Si no existe, crear el usuario
+      try {
+        userCredential = await auth.createUserWithEmailAndPassword(
+          email: 'lacosta@jaysa.com',
+          password: 'Admin123!',
+        );
+      } catch (createError) {
+        print('Error al crear usuario admin: $createError');
+        return;
+      }
+    }
 
-  await userRef.set({
-    'email': 'lacosta@jaysa.com',
-    'role': 'admin',
-    'createdAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true)); // Use merge to avoid overwriting existing data
+    if (userCredential?.user != null) {
+      final uid = userCredential!.user!.uid;
+      final firestore = FirebaseFirestore.instance;
+      final userRef = firestore.collection('users').doc(uid);
 
-  print('User role updated successfully!');
+      await userRef.set({
+        'email': 'lacosta@jaysa.com',
+        'role': 'admin',
+        'name': 'Administrador Principal',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      print('Usuario admin configurado exitosamente con UID: $uid');
+      
+      // Cerrar sesión para que el usuario pueda loguearse normalmente
+      await auth.signOut();
+    }
+  } catch (e) {
+    print('Error configurando admin: $e');
+  }
 }
 
 class JIntranetApp extends ConsumerWidget {
