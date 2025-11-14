@@ -17,6 +17,9 @@ class AttendanceRemoteDataSource {
       String query = '',
       String? company}) async {
     try {
+      // Obtener todos los empleados de la compañía
+      final employees = await _getEmployeesByCompany(company);
+
       // Obtener registros de asistencia desde Firestore
       Query<Map<String, dynamic>> query_ref =
           _firestore.collection('attendance_records');
@@ -42,8 +45,35 @@ class AttendanceRemoteDataSource {
               }))
           .toList();
 
+      // Crear registros vacíos para empleados sin asistencia
+      final recordsByEmployee = <String, List<AttendanceRecord>>{};
+      for (final record in records) {
+        final key = record.employeeName;
+        recordsByEmployee.putIfAbsent(key, () => []).add(record);
+      }
+
+      // Agregar empleados sin registros
+      final allRecords = List<AttendanceRecord>.from(records);
+      for (final employee in employees) {
+        if (!recordsByEmployee.containsKey(employee['name'])) {
+          // Crear un registro vacío para el empleado
+          allRecords.add(AttendanceRecordModel(
+            id: '${employee['name']}_placeholder',
+            employeeName: employee['name'],
+            employeeId: employee['id'],
+            department: employee['department'] ?? 'General',
+            date: range.start,
+            entry: null,
+            exit: null,
+            hoursWorked: 0,
+            status: AttendanceStatus.absent,
+            company: company,
+          ));
+        }
+      }
+
       // Aplicar filtros adicionales
-      return records
+      return allRecords
           .where((e) => (department == null || e.department == department))
           .where((e) =>
               query.isEmpty ||
@@ -54,6 +84,38 @@ class AttendanceRemoteDataSource {
       print('Error fetching attendance records: $e');
       // Fallback a datos de prueba si falla Firestore
       return _getFallbackData(range, department, query, company);
+    }
+  }
+
+  /// Obtiene todos los empleados de una compañía desde Firestore
+  Future<List<Map<String, dynamic>>> _getEmployeesByCompany(
+      String? company) async {
+    try {
+      if (company == null || company.isEmpty) {
+        return [];
+      }
+
+      // Mapear nombre de compañía a ID en Firestore
+      final companyId = company == 'Jaysa Muebles' ? 'jaysa_muebles' : 'helaco';
+
+      final snap = await _firestore
+          .collection('companies')
+          .doc(companyId)
+          .collection('employees')
+          .get();
+
+      return snap.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': (doc.data()['name'] ?? '').toString(),
+                'department':
+                    (doc.data()['department'] ?? 'General').toString(),
+                'company': company,
+              })
+          .toList();
+    } catch (e) {
+      print('Error fetching employees: $e');
+      return [];
     }
   }
 
