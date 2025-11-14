@@ -1,6 +1,7 @@
 import 'package:j_intranet/features/settings/presentation/screens/employee_edit_screen.dart';
 import 'package:j_intranet/features/settings/presentation/screens/profile_management_screen.dart';
 import 'package:j_intranet/features/settings/presentation/screens/user_profile_screen.dart';
+import 'package:j_intranet/features/settings/presentation/screens/import_attendance_screen.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -47,6 +48,19 @@ class SettingsScreen extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => const UserProfileScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.upload_file_outlined),
+            title: const Text('Importación de asistencia'),
+            subtitle: const Text('Importar registros de asistencia desde JSON'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ImportAttendanceScreen(),
                 ),
               );
             },
