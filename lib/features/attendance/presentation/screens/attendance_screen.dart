@@ -9,6 +9,7 @@ import 'package:j_intranet/features/requests/presentation/screens/requests_list_
 import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
 import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
+import 'package:j_intranet/features/attendance/domain/entities/attendance_record.dart';
 
 import '../providers/attendance_providers.dart';
 // import '../widgets/date_range_selector.dart';
@@ -75,7 +76,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(attendanceControllerProvider);
     final ctrl = ref.read(attendanceControllerProvider.notifier);
     final session = ref.watch(authSessionProvider);
 
@@ -183,75 +183,16 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Barra superior estilo maqueta (chips empresa, leyenda, buscador y navegación semanal)
-                Row(
-                  children: [
-                    // Mostrar chips solo si el usuario tiene acceso a múltiples compañías
-                    if (session?.user.companies != null &&
-                        session!.user.companies!.length > 1) ...[
-                      if (session.user.companies!.contains('Jaysa Muebles'))
-                        ChoiceChip(
-                          selected: _selectedCompany == 'Jaysa Muebles',
-                          label: const Text('Jaysa Muebles'),
-                          onSelected: (_) {
-                            setState(() => _selectedCompany = 'Jaysa Muebles');
-                            ctrl.setCompany('Jaysa Muebles');
-                          },
-                        ),
-                      if (session.user.companies!.contains('Jaysa Muebles'))
-                        const SizedBox(width: 8),
-                      if (session.user.companies!.contains('Helaco'))
-                        ChoiceChip(
-                          selected: _selectedCompany == 'Helaco',
-                          label: const Text('Helaco'),
-                          onSelected: (_) {
-                            setState(() => _selectedCompany = 'Helaco');
-                            ctrl.setCompany('Helaco');
-                          },
-                        ),
-                    ] else if (session?.user.companies != null &&
-                        session!.user.companies!.length == 1)
-                      // Si solo tiene una compañía, mostrar como texto
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          'Compañía: ${session.user.companies![0]}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    const SizedBox(width: 12),
-                    const StatusLegend(),
-                    const Spacer(),
-                    SizedBox(
-                      width: 280,
-                      child: TextField(
-                        controller: _searchCtrl,
-                        onChanged: ctrl.setQuery,
-                        decoration: const InputDecoration(
-                          hintText: 'Buscar empleado...',
-                          prefixIcon: Icon(Icons.search),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    state.when(
-                      data: (records) => _WeekLabel(
-                        range: ctrl.filters.dateRange,
-                        onPrev: ctrl.previousWeek,
-                        onNext: ctrl.nextWeek,
-                      ),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (err, stack) => Text('Error: $err'),
-                    ),
-                  ],
+                _TopBar(
+                  session: session,
+                  searchCtrl: _searchCtrl,
+                  selectedCompany: _selectedCompany,
+                  onSelectCompany: (c) {
+                    setState(() => _selectedCompany = c);
+                    ctrl.setCompany(c);
+                  },
                 ),
-
                 const SizedBox(height: 24),
-                // Tabla semanal
-                const SizedBox(height: 8),
-
-                // Tabla
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -259,20 +200,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
-                    child: state.when(
-                      data: (records) => WeeklyAttendanceTable(
-                        records: records,
-                        range: ctrl.filters.dateRange,
-                        onRegister: (employeeName, date) {
-                          showDialog(
-                            context: context,
-                            builder: (_) => RegisterOptionsModal(
-                                employeeName: employeeName, date: date),
-                          );
-                        },
-                      ),
-                      loading: () => const _TableSkeletonLoader(),
-                      error: (err, stack) => Center(child: Text('Error: $err')),
+                    child: _TableSection(
+                      onRegister: (employeeName, date) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => RegisterOptionsModal(
+                              employeeName: employeeName, date: date),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -282,6 +217,97 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         ),
       ),
     );
+  }
+}
+
+class _TopBar extends ConsumerWidget {
+  const _TopBar({required this.session, required this.searchCtrl, required this.selectedCompany, required this.onSelectCompany});
+  final dynamic session;
+  final TextEditingController searchCtrl;
+  final String selectedCompany;
+  final void Function(String company) onSelectCompany;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        if (session?.user.companies != null && session!.user.companies!.length > 1) ...[
+          if (session.user.companies!.contains('Jaysa Muebles'))
+            ChoiceChip(
+              selected: selectedCompany == 'Jaysa Muebles',
+              label: const Text('Jaysa Muebles'),
+              onSelected: (_) {
+                onSelectCompany('Jaysa Muebles');
+              },
+            ),
+          if (session.user.companies!.contains('Jaysa Muebles')) const SizedBox(width: 8),
+          if (session.user.companies!.contains('Helaco'))
+            ChoiceChip(
+              selected: selectedCompany == 'Helaco',
+              label: const Text('Helaco'),
+              onSelected: (_) {
+                onSelectCompany('Helaco');
+              },
+            ),
+        ] else if (session?.user.companies != null && session!.user.companies!.length == 1)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              'Compañía: ${session.user.companies![0]}',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        const SizedBox(width: 12),
+        const StatusLegend(),
+        const Spacer(),
+        SizedBox(
+          width: 280,
+          child: TextField(
+            controller: searchCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Buscar empleado...',
+              prefixIcon: Icon(Icons.search),
+              isDense: true,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        const _WeekNavigator(),
+      ],
+    );
+  }
+}
+
+class _WeekNavigator extends ConsumerWidget {
+  const _WeekNavigator();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ctrl = ref.read(attendanceControllerProvider.notifier);
+    final range = ref.watch(
+      attendanceControllerProvider.select((state) => state.maybeWhen(
+            data: (_) => ctrl.filters.dateRange,
+            orElse: () => ctrl.filters.dateRange,
+          )),
+    );
+    return _WeekLabel(range: range, onPrev: ctrl.previousWeek, onNext: ctrl.nextWeek);
+  }
+}
+
+class _TableSection extends ConsumerWidget {
+  const _TableSection({required this.onRegister});
+  final void Function(String employeeName, DateTime date) onRegister;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ctrl = ref.read(attendanceControllerProvider.notifier);
+    final isLoading = ref.watch(
+      attendanceControllerProvider.select((state) => state.maybeWhen(loading: () => true, orElse: () => false)),
+    );
+    final records = ref.watch(
+      attendanceControllerProvider.select((state) => state.maybeWhen(data: (records) => records, orElse: () => <AttendanceRecord>[])),
+    );
+    if (isLoading) return const _TableSkeletonLoader();
+    return WeeklyAttendanceTable(records: records, range: ctrl.filters.dateRange, onRegister: onRegister);
   }
 }
 

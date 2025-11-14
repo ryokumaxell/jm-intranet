@@ -34,7 +34,8 @@ class WeeklyAttendanceTable extends StatelessWidget {
             (context, index) {
               final emp = employees[index];
               return RepaintBoundary(
-                child: _Row(
+                child: _EmployeeRow(
+                  key: ValueKey(emp.id.isNotEmpty ? emp.id : emp.name),
                   employee: emp,
                   days: days,
                   onRegister: onRegister,
@@ -100,8 +101,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Row extends StatelessWidget {
-  const _Row({required this.employee, required this.days, this.onRegister});
+class _EmployeeRow extends StatelessWidget {
+  const _EmployeeRow({super.key, required this.employee, required this.days, this.onRegister});
   final _EmployeeRowData employee;
   final List<DateTime> days;
   final void Function(String employeeName, DateTime date)? onRegister;
