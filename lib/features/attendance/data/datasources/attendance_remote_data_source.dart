@@ -7,6 +7,7 @@ import '../models/attendance_record_model.dart';
 
 class AttendanceRemoteDataSource {
   final Dio dio;
+  final Map<String, List<AttendanceRecord>> _weekCache = {};
 
   AttendanceRemoteDataSource(this.dio);
 
@@ -16,8 +17,16 @@ class AttendanceRemoteDataSource {
       String query = '',
       String? company}) async {
     try {
-      // Cargar datos desde el archivo JSON de assets
-      final records = await _loadRecordsFromAssets(company);
+      final companyName = company ?? 'Helaco';
+      final start = DateTime(range.start.year, range.start.month, range.start.day);
+      final end = DateTime(range.end.year, range.end.month, range.end.day);
+      final cacheKey = '$companyName|${start.year}-${start.month}-${start.day}|${end.year}-${end.month}-${end.day}';
+
+      List<AttendanceRecord> records = _weekCache[cacheKey] ?? const [];
+      if (records.isEmpty) {
+        records = await _loadWeekRecordsFromAssets(range, companyName);
+        _weekCache[cacheKey] = records;
+      }
 
       // Filtrar por rango de fechas
       final filteredByDate = records
@@ -38,15 +47,143 @@ class AttendanceRemoteDataSource {
               e.employeeId.toLowerCase().contains(query.toLowerCase()))
           .toList();
     } catch (e) {
-      print('Error fetching attendance records: $e');
+      debugPrint('Error fetching attendance records: $e');
       // Fallback a datos de prueba si falla
       return _getFallbackData(range, department, query, company);
     }
   }
 
+  Future<List<AttendanceRecord>> _loadWeekRecordsFromAssets(
+    DateTimeRange range,
+    String companyName,
+  ) async {
+    final employeeRecords = <String, Map<DateTime, AttendanceRecordModel>>{};
+
+    try {
+      final s = DateTime(range.start.year, range.start.month, range.start.day);
+      final e = DateTime(range.end.year, range.end.month, range.end.day);
+      String pad(int v) => v.toString().padLeft(2, '0');
+      final startStr = '${pad(s.day)}-${pad(s.month)}-${(s.year % 100).toString().padLeft(2, '0')}';
+      final endStr = '${pad(e.day)}-${pad(e.month)}-${(e.year % 100).toString().padLeft(2, '0')}';
+      final companyKey = companyName == 'Jaysa Muebles' ? 'jaysamuebles' : 'helaco';
+
+      final candidates = <String>[
+        'assets/data/asis_${companyKey}_${startStr} a ${endStr}.json',
+        'assets/data/asis_${companyKey}_${startStr}a${endStr}.json',
+      ];
+
+      String? existingPath;
+      for (final p in candidates) {
+        try {
+          await rootBundle.load(p);
+          existingPath = p;
+          break;
+        } catch (_) {}
+      }
+
+      if (existingPath == null) {
+        debugPrint('No se encontró archivo para $companyName semana $startStr a $endStr');
+        return const [];
+      }
+
+      final byteData = await rootBundle.load(existingPath);
+      final bytes = byteData.buffer.asUint8List();
+
+      String jsonString;
+      try {
+        jsonString = utf8.decode(bytes);
+      } on FormatException {
+        var startIndex = 0;
+        if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+          startIndex = 2;
+        }
+        final codeUnits = <int>[];
+        for (var i = startIndex; i + 1 < bytes.length; i += 2) {
+          final unit = bytes[i] | (bytes[i + 1] << 8);
+          codeUnits.add(unit);
+        }
+        jsonString = String.fromCharCodes(codeUnits);
+      }
+
+      final data = jsonDecode(jsonString);
+      if (data is List) {
+        for (final item in data) {
+          if (item is! Map) continue;
+          final colaborador = item['colaborador'] as String? ?? '';
+          final asistencias = item['asistencias'] as List<dynamic>? ?? const [];
+          if (colaborador.isEmpty || asistencias.isEmpty) continue;
+
+          final employeeDays = employeeRecords.putIfAbsent(colaborador, () => {});
+
+          for (final raw in asistencias) {
+            if (raw is! String) continue;
+            final dateTime = _parseSpanishDateTime(raw);
+            if (dateTime == null) continue;
+
+            final day = DateTime(dateTime.year, dateTime.month, dateTime.day);
+            final isEntry = dateTime.hour < 12;
+
+            final existing = employeeDays[day];
+            if (existing == null) {
+              employeeDays[day] = AttendanceRecordModel(
+                id: '${colaborador}_${day.millisecondsSinceEpoch}',
+                employeeName: colaborador,
+                employeeId: colaborador,
+                department: 'General',
+                date: day,
+                entry: isEntry ? dateTime : null,
+                exit: !isEntry ? dateTime : null,
+                hoursWorked: 8.0,
+                status: isEntry ? _calculateStatus(dateTime) : AttendanceStatus.punctual,
+                company: companyName,
+              );
+            } else {
+              if (isEntry) {
+                employeeDays[day] = AttendanceRecordModel(
+                  id: existing.id,
+                  employeeName: existing.employeeName,
+                  employeeId: existing.employeeId,
+                  department: existing.department,
+                  date: existing.date,
+                  entry: dateTime,
+                  exit: existing.exit,
+                  hoursWorked: existing.hoursWorked,
+                  status: _calculateStatus(dateTime),
+                  company: existing.company,
+                );
+              } else {
+                employeeDays[day] = AttendanceRecordModel(
+                  id: existing.id,
+                  employeeName: existing.employeeName,
+                  employeeId: existing.employeeId,
+                  department: existing.department,
+                  date: existing.date,
+                  entry: existing.entry,
+                  exit: dateTime,
+                  hoursWorked: existing.hoursWorked,
+                  status: existing.status,
+                  company: existing.company,
+                );
+              }
+            }
+          }
+        }
+      }
+
+      final allRecords = <AttendanceRecord>[];
+      for (final employee in employeeRecords.values) {
+        allRecords.addAll(employee.values);
+      }
+      debugPrint('✅ Cargados ${allRecords.length} registros para $companyName ($existingPath)');
+      return allRecords;
+    } catch (e) {
+      debugPrint('Error loading week from assets: $e');
+      return [];
+    }
+  }
+
   /// Carga registros desde el archivo JSON en assets
   Future<List<AttendanceRecord>> _loadRecordsFromAssets(String? company) async {
-    final records = <AttendanceRecord>[];
     final employeeRecords = <String, Map<DateTime, AttendanceRecordModel>>{};
 
     try {
@@ -203,24 +340,11 @@ class AttendanceRemoteDataSource {
                     company: existing.company,
                   );
                 }
-              }
-            },
-                  employeeName: colaborador,
-                  employeeId: colaborador,
-                  department: 'General',
-                  date: dateTime,
-                  entry: isEntry ? dateTime : null,
-                  exit: !isEntry ? dateTime : null,
-                  hoursWorked: 8.0,
-                  status: isEntry ? _calculateStatus(dateTime) : AttendanceStatus.punctual,
-                  company: companyName,
-                ),
-              )
-            }
             }
           }
+        }
         } catch (e) {
-          print('Error leyendo $path: $e');
+          debugPrint('Error leyendo $path: $e');
         }
       }
 
@@ -230,10 +354,10 @@ class AttendanceRemoteDataSource {
         allRecords.addAll(employee.values);
       }
 
-      print('✅ Cargados ${allRecords.length} registros para $companyName');
+      debugPrint('✅ Cargados ${allRecords.length} registros para $companyName');
       return allRecords;
-    } List catch (e) {
-      print('Error loading records from assets: $e');
+    } catch (e) {
+      debugPrint('Error loading records from assets: $e');
       return [];
     }
   }
@@ -365,7 +489,7 @@ class AttendanceRemoteDataSource {
 
       return DateTime(year, month, day, hour, minute);
     } catch (e) {
-      print('Error parsing date: $dateStr - $e');
+      debugPrint('Error parsing date: $dateStr - $e');
       return null;
     }
   }

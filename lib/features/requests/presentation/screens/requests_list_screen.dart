@@ -139,7 +139,9 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
               int cols = 1;
               if (w >= 1200) {
                 cols = 3;
-              } else if (w >= 800) cols = 2;
+              } else if (w >= 800) {
+                cols = 2;
+              }
               final sections = [
                 _RequestsSection(
                     title: 'Permisos pendientes', items: permisosPendientes),

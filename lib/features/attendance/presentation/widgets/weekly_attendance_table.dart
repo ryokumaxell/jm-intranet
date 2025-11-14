@@ -19,20 +19,35 @@ class WeeklyAttendanceTable extends StatelessWidget {
     final days = _daysInRange(range);
     final employees = _groupByEmployee(records);
 
-    // La tabla se ajusta al ancho disponible y las columnas se distribuyen de forma flexible.
-    return ListView.builder(
-      itemCount: employees.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return _Header(days: days);
-        }
-        final emp = employees[index - 1];
-        return _Row(
-          employee: emp,
-          days: days,
-          onRegister: onRegister,
-        );
-      },
+    // Cabecera fija con SliverPersistentHeader y lista de filas debajo
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      cacheExtent: 720,
+      slivers: [
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _HeaderDelegate(days: days),
+        ),
+        SliverFixedExtentList(
+          itemExtent: 72,
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final emp = employees[index];
+              return RepaintBoundary(
+                child: _Row(
+                  employee: emp,
+                  days: days,
+                  onRegister: onRegister,
+                ),
+              );
+            },
+            childCount: employees.length,
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
+            addSemanticIndexes: false,
+          ),
+        ),
+      ],
     );
   }
 
@@ -69,7 +84,6 @@ class _Header extends StatelessWidget {
       height: 56,
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
         border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
       child: Row(
@@ -96,6 +110,7 @@ class _Row extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 72,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
@@ -117,7 +132,6 @@ class _Row extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(employee.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(employee.id.isNotEmpty ? employee.id : employee.department, style: TextStyle(color: Colors.black54, fontSize: 12)),
                   ],
                 ),
               ),
@@ -314,5 +328,32 @@ class _LegendItem extends StatelessWidget {
         Text(label),
       ],
     );
+  }
+}
+
+class _HeaderDelegate extends SliverPersistentHeaderDelegate {
+  _HeaderDelegate({required this.days});
+  final List<DateTime> days;
+
+  @override
+  double get minExtent => 56;
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return _Header(days: days);
+  }
+
+  @override
+  bool shouldRebuild(covariant _HeaderDelegate oldDelegate) {
+    if (oldDelegate.days.length != days.length) return true;
+    for (var i = 0; i < days.length; i++) {
+      final a = oldDelegate.days[i];
+      final b = days[i];
+      if (a.year != b.year || a.month != b.month || a.day != b.day) return true;
+    }
+    return false;
   }
 }
