@@ -10,6 +10,7 @@ class AttendanceRecord {
   final DateTime? exit;
   final double hoursWorked;
   final AttendanceStatus status;
+  final String? company; // 'Jaysa Muebles' | 'Helaco'
 
   const AttendanceRecord({
     required this.id,
@@ -21,5 +22,6 @@ class AttendanceRecord {
     this.exit,
     required this.hoursWorked,
     required this.status,
+    this.company,
   });
 }

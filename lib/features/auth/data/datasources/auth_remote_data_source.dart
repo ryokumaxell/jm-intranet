@@ -9,11 +9,17 @@ class AuthRemoteDataSource {
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
 
-  AuthRemoteDataSource(Dio _dio) : _firebaseAuth = firebase_auth.FirebaseAuth.instance, _firestore = FirebaseFirestore.instance;
+  AuthRemoteDataSource(Dio dio)
+      : _firebaseAuth = firebase_auth.FirebaseAuth.instance,
+        _firestore = FirebaseFirestore.instance;
 
   Future<AuthSessionModel> login(String email, String password) async {
-    final userCredential = await _firebaseAuth.signInWithEmailAndPassword(email: email, password: password);
-    final user = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+    final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email, password: password);
+    final user = await _firestore
+        .collection('users')
+        .doc(userCredential.user!.uid)
+        .get();
     final userModel = UserModel.fromFirestore(user.data()!, user.id);
     final token = await userCredential.user!.getIdToken();
     if (token == null) {
@@ -35,14 +41,20 @@ class AuthRemoteDataSource {
     return UserModel.fromFirestore(userDoc.data()!, user.uid);
   }
 
-  Future<UserModel> createUser({required String email, required String password, required String role, required String company}) async {
-    final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
+  Future<UserModel> createUser(
+      {required String email,
+      required String password,
+      required String role,
+      required List<String> companies}) async {
+    final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email, password: password);
     final userUid = userCredential.user!.uid;
     await _firestore.collection('users').doc(userUid).set({
       'email': email,
       'role': role,
-      'company': company,
+      'companies': companies,
       'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
     final userDoc = await _firestore.collection('users').doc(userUid).get();
     return UserModel.fromFirestore(userDoc.data()!, userUid);

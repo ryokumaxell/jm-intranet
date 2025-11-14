@@ -76,7 +76,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: company.isNotEmpty ? company : null,
+                    initialValue: company.isNotEmpty ? company : null,
                     items: _companies
                         .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                         .toList(),
@@ -99,7 +99,9 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
                           final newCompany = company.trim();
                           if (newName.isEmpty ||
                               newDept.isEmpty ||
-                              newCompany.isEmpty) return;
+                              newCompany.isEmpty) {
+                            return;
+                          }
 
                           try {
                             // If company changes, move the doc to the other collection

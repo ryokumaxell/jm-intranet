@@ -30,7 +30,8 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Correo Electrónico'),
+                decoration:
+                    const InputDecoration(labelText: 'Correo Electrónico'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Por favor, ingrese un correo electrónico';
@@ -49,7 +50,8 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
                   return null;
                 },
               ),
-              TextFormField( // Add this TextFormField
+              TextFormField(
+                // Add this TextFormField
                 controller: _companyController,
                 decoration: const InputDecoration(labelText: 'Compañía'),
                 validator: (value) {
@@ -77,18 +79,20 @@ class _CreateUserScreenState extends ConsumerState<CreateUserScreen> {
                   if (_formKey.currentState!.validate()) {
                     try {
                       await ref.read(createUserUseCaseProvider).call(
-                            _emailController.text,
-                            _passwordController.text,
-                            _selectedRole,
-                            _companyController.text, // Add this line
-                          );
+                        _emailController.text,
+                        _passwordController.text,
+                        _selectedRole,
+                        [_companyController.text],
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Usuario creado con éxito')),
+                        const SnackBar(
+                            content: Text('Usuario creado con éxito')),
                       );
                       Navigator.of(context).pop();
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error al crear el usuario: $e')),
+                        SnackBar(
+                            content: Text('Error al crear el usuario: $e')),
                       );
                     }
                   }

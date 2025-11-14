@@ -5,5 +5,9 @@ abstract class AuthRepository {
   Future<AuthSession> login({required String email, required String password});
   Future<void> logout();
   Future<User?> getCurrentUser();
-  Future<User> createUser({required String email, required String password, required String role, required String company});
+  Future<User> createUser(
+      {required String email,
+      required String password,
+      required String role,
+      required List<String> companies});
 }

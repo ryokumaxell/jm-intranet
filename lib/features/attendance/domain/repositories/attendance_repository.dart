@@ -9,6 +9,7 @@ class AttendanceFilters {
   final bool ascending;
   final int page;
   final int pageSize;
+  final String? company; // 'Jaysa Muebles' | 'Helaco'
 
   const AttendanceFilters({
     required this.dateRange,
@@ -18,6 +19,7 @@ class AttendanceFilters {
     this.ascending = false,
     this.page = 0,
     this.pageSize = 10,
+    this.company,
   });
 
   AttendanceFilters copyWith({
@@ -28,6 +30,7 @@ class AttendanceFilters {
     bool? ascending,
     int? page,
     int? pageSize,
+    String? company,
   }) {
     return AttendanceFilters(
       dateRange: dateRange ?? this.dateRange,
@@ -37,6 +40,7 @@ class AttendanceFilters {
       ascending: ascending ?? this.ascending,
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
+      company: company ?? this.company,
     );
   }
 }

@@ -13,9 +13,10 @@ import 'employee_detail_screen.dart';
 
 class EmployeesListScreen extends ConsumerStatefulWidget {
   const EmployeesListScreen({super.key});
-  
+
   @override
-  ConsumerState<EmployeesListScreen> createState() => _EmployeesListScreenState();
+  ConsumerState<EmployeesListScreen> createState() =>
+      _EmployeesListScreenState();
 }
 
 class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
@@ -43,7 +44,7 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
         actions: [
           const Icon(Icons.notifications_none),
           const SizedBox(width: 8),
-          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
+          Text(session?.user.email ?? 'Invitado', style: AppTextStyles.body),
           const SizedBox(width: 12),
         ],
       ),
@@ -51,7 +52,8 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
+              currentAccountPicture:
+                  const CircleAvatar(child: Icon(Icons.person)),
               accountName: Text(session?.user.name ?? 'Invitado'),
               accountEmail: Text(session?.user.email ?? ''),
             ),
@@ -121,9 +123,10 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
       ),
       body: employeesAsyncValue.when(
         data: (employees) {
-          final jaysa = employees.where((e) => e.company == 'Jaysa Muebles').toList();
+          final jaysa =
+              employees.where((e) => e.company == 'Jaysa Muebles').toList();
           final helaco = employees.where((e) => e.company == 'Helaco').toList();
-          
+
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
@@ -164,10 +167,12 @@ class _CompanySection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (employees.isEmpty)
-              const Text('Sin empleados', style: TextStyle(color: Colors.black54))
+              const Text('Sin empleados',
+                  style: TextStyle(color: Colors.black54))
             else
               ...employees.map((e) => ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                    leading:
+                        const CircleAvatar(child: Icon(Icons.person_outline)),
                     title: Text(e.name),
                     subtitle: Text('${e.department} • ${e.id}'),
                     trailing: const Icon(Icons.chevron_right),

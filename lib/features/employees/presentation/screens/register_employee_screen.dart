@@ -7,10 +7,12 @@ class RegisterEmployeeScreen extends ConsumerStatefulWidget {
   const RegisterEmployeeScreen({super.key, required this.company});
 
   @override
-  ConsumerState<RegisterEmployeeScreen> createState() => _RegisterEmployeeScreenState();
+  ConsumerState<RegisterEmployeeScreen> createState() =>
+      _RegisterEmployeeScreenState();
 }
 
-class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen> {
+class _RegisterEmployeeScreenState
+    extends ConsumerState<RegisterEmployeeScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -45,7 +47,7 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
           email: _emailController.text,
           password: _passwordController.text,
           role: _selectedRole,
-          company: _selectedCompany,
+          companies: [_selectedCompany],
         );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Empleado registrado exitosamente!')),
@@ -53,7 +55,8 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
         Navigator.of(context).pop();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al registrar empleado: ${e.toString()}')),
+          SnackBar(
+              content: Text('Error al registrar empleado: ${e.toString()}')),
         );
       } finally {
         setState(() {
@@ -100,7 +103,9 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese el correo electrónico';
                   }
-                  if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                  if (!RegExp(
+                          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                      .hasMatch(value)) {
                     return 'Por favor ingrese un correo electrónico válido';
                   }
                   return null;
@@ -133,7 +138,8 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
                 ),
                 items: const [
                   DropdownMenuItem(value: 'employee', child: Text('Empleado')),
-                  DropdownMenuItem(value: 'admin', child: Text('Administrador')),
+                  DropdownMenuItem(
+                      value: 'admin', child: Text('Administrador')),
                 ],
                 onChanged: (value) {
                   setState(() {
@@ -149,7 +155,8 @@ class _RegisterEmployeeScreenState extends ConsumerState<RegisterEmployeeScreen>
                   border: OutlineInputBorder(),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'Jaysa Muebles', child: Text('Jaysa Muebles')),
+                  DropdownMenuItem(
+                      value: 'Jaysa Muebles', child: Text('Jaysa Muebles')),
                   DropdownMenuItem(value: 'Helaco', child: Text('Helaco')),
                 ],
                 onChanged: (value) {

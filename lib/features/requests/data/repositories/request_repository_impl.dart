@@ -7,13 +7,29 @@ class RequestRepositoryImpl implements RequestRepository {
   RequestRepositoryImpl(this.remote);
 
   @override
-  Future<List<Request>> getRequests() {
-    return remote.getRequests();
+  Future<List<Request>> getRequests({String? employeeId}) {
+    return remote.getRequests(employeeId: employeeId);
   }
 
   @override
-  Future<Request> createRequest({required String type}) {
-    return remote.createRequest(type: type);
+  Future<Request> createRequest({
+    required String type,
+    required String employeeId,
+    required String employeeName,
+    required String employeeEmail,
+    required DateTime startDate,
+    DateTime? endDate,
+    required String reason,
+  }) {
+    return remote.createRequest(
+      type: type,
+      employeeId: employeeId,
+      employeeName: employeeName,
+      employeeEmail: employeeEmail,
+      startDate: startDate,
+      endDate: endDate,
+      reason: reason,
+    );
   }
 
   @override

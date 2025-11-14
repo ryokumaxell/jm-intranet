@@ -1,5 +1,6 @@
 import 'package:j_intranet/features/settings/presentation/screens/employee_edit_screen.dart';
 import 'package:j_intranet/features/settings/presentation/screens/profile_management_screen.dart';
+import 'package:j_intranet/features/settings/presentation/screens/user_profile_screen.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -43,7 +44,11 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Perfil'),
             subtitle: const Text('Gestiona la información de tu perfil'),
             onTap: () {
-              // TODO: Navegar a la pantalla de perfil
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const UserProfileScreen(),
+                ),
+              );
             },
           ),
         ],

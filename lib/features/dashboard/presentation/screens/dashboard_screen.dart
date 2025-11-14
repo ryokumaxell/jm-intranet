@@ -6,7 +6,6 @@ import 'package:j_intranet/core/constants/app_constants.dart';
 import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 import 'package:j_intranet/features/requests/presentation/screens/requests_list_screen.dart';
 import 'package:j_intranet/features/attendance/presentation/screens/attendance_screen.dart';
-import 'package:j_intranet/features/profile/presentation/screens/profile_screen.dart';
 import 'package:j_intranet/features/employees/presentation/screens/employees_list_screen.dart';
 import 'package:j_intranet/features/settings/presentation/screens/settings_screen.dart';
 import 'package:j_intranet/core/providers/theme_provider.dart';
@@ -16,11 +15,9 @@ import 'package:j_intranet/features/attendance/presentation/providers/attendance
 import 'package:j_intranet/features/attendance/domain/entities/attendance_record.dart';
 import 'package:j_intranet/features/dashboard/domain/entities/metric.dart';
 import 'package:j_intranet/features/requests/domain/entities/request.dart';
-import 'package:j_intranet/features/employees/domain/entities/employee.dart';
 
 import '../providers/dashboard_providers.dart';
 import '../widgets/summary_card.dart';
-import '../widgets/chart_placeholder.dart';
 import '../widgets/activity_list.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -94,7 +91,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
           ),
           const SizedBox(width: 8),
-          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
+          Text(session?.user.email ?? 'Invitado', style: AppTextStyles.body),
           const SizedBox(width: 12),
         ],
       ),
@@ -227,13 +224,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
               SliverPadding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: horizontalPadding, vertical: 8),
-                sliver: SliverToBoxAdapter(
-                  child: ChartPlaceholder(title: 'Gráfico de estadísticas'),
-                ),
-              ),
-              SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                     horizontalPadding, 8, horizontalPadding, 24),
                 sliver: SliverToBoxAdapter(
@@ -249,7 +239,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   List<Metric> _buildMetrics(BuildContext context) {
     final attAsync = ref.watch(attendanceControllerProvider);
-    final employees = ref.watch(employeesProvider);
     final requestsAsync = ref.watch(requestsProvider);
 
     final List<AttendanceRecord> attRecords = attAsync.when(
@@ -263,46 +252,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       loading: () => [],
       error: (err, stack) => [],
     );
-
-    final List<Employee> employeesList = employees.when(
-      data: (data) => data,
-      loading: () => [],
-      error: (err, stack) => [],
-    );
-
-    // Mapear empleado -> empresa
-    final companyByEmployee = <String, String>{
-      for (final e in employeesList) e.id: e.company,
-    };
-
-    // Calcular promedio semanal de tardanzas (minutos) por empresa, asumiendo jornada inicia 9:00
-    int tardyMinutes(DateTime? entry) {
-      if (entry == null) return 0;
-      final scheduled = DateTime(entry.year, entry.month, entry.day, 9, 0);
-      final diff = entry.difference(scheduled).inMinutes;
-      return diff > 0 ? diff : 0;
-    }
-
-    final lateRecords =
-        attRecords.where((r) => r.status == AttendanceStatus.late).toList();
-    final jaysaLate = lateRecords
-        .where((r) => companyByEmployee[r.employeeId] == 'Jaysa Muebles')
-        .toList();
-    final helacoLate = lateRecords
-        .where((r) => companyByEmployee[r.employeeId] == 'Helaco')
-        .toList();
-    final jaysaAvg = jaysaLate.isEmpty
-        ? 0
-        : (jaysaLate.map((r) => tardyMinutes(r.entry)).reduce((a, b) => a + b) /
-                jaysaLate.length)
-            .round();
-    final helacoAvg = helacoLate.isEmpty
-        ? 0
-        : (helacoLate
-                    .map((r) => tardyMinutes(r.entry))
-                    .reduce((a, b) => a + b) /
-                helacoLate.length)
-            .round();
 
     // Vacaciones próximas (demo: contar solicitudes de vacaciones pendientes)
     final upcomingVacations = requests
@@ -330,12 +279,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         .length;
 
     return [
-      Metric(
-        key: 'tardiness_avg',
-        title: 'Promedio semanal de tardanzas',
-        value: 'Jaysa: ${jaysaAvg}m • Helaco: ${helacoAvg}m',
-        subtitle: 'Basado en entradas tardías de esta semana',
-      ),
       Metric(
         key: 'upcoming_vacations',
         title: 'Vacaciones próximas',

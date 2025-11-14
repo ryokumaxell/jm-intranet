@@ -27,13 +27,36 @@ class AttendanceScreen extends ConsumerStatefulWidget {
 class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   String? _dept;
-  int _company = 0; // 0: Jaysa Muebles, 1: Helaco
+  String _selectedCompany = 'Jaysa Muebles'; // Usar nombre de compañía
 
   @override
   void initState() {
     super.initState();
     _searchCtrl.addListener(() {
-      ref.read(attendanceControllerProvider.notifier).setQuery(_searchCtrl.text);
+      ref
+          .read(attendanceControllerProvider.notifier)
+          .setQuery(_searchCtrl.text);
+    });
+    // Inicializar compañía según el usuario
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final session = ref.read(authSessionProvider);
+      if (session?.user.companies != null &&
+          session!.user.companies!.isNotEmpty) {
+        // Si el usuario solo tiene acceso a una compañía, seleccionarla automáticamente
+        if (session.user.companies!.length == 1) {
+          _selectedCompany = session.user.companies![0];
+          ref
+              .read(attendanceControllerProvider.notifier)
+              .setCompany(_selectedCompany);
+        } else {
+          // Si tiene acceso a múltiples, seleccionar la primera
+          _selectedCompany = session.user.companies![0];
+          ref
+              .read(attendanceControllerProvider.notifier)
+              .setCompany(_selectedCompany);
+        }
+        setState(() {});
+      }
     });
   }
 
@@ -53,7 +76,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         elevation: 2,
-        title: const Text('Control de Asistencia', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+        title: const Text('Control de Asistencia',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
         centerTitle: true,
         leading: Builder(
           builder: (context) => IconButton(
@@ -64,7 +88,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         actions: [
           const Icon(Icons.notifications_none),
           const SizedBox(width: 8),
-          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
+          Text(session?.user.email ?? 'Invitado', style: AppTextStyles.body),
           const SizedBox(width: 12),
         ],
         backgroundColor: Colors.white,
@@ -74,7 +98,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
-              currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
+              currentAccountPicture:
+                  const CircleAvatar(child: Icon(Icons.person)),
               accountName: Text(session?.user.name ?? 'Invitado'),
               accountEmail: Text(session?.user.email ?? ''),
             ),
@@ -94,7 +119,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const EmployeesListScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const EmployeesListScreen()),
                 );
               },
             ),
@@ -132,7 +158,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  Text('${AppConstants.appName} v0.1.0', style: AppTextStyles.small.copyWith(color: Colors.black54)),
+                  Text('${AppConstants.appName} v0.1.0',
+                      style:
+                          AppTextStyles.small.copyWith(color: Colors.black54)),
                 ],
               ),
             ),
@@ -151,17 +179,39 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 // Barra superior estilo maqueta (chips empresa, leyenda, buscador y navegación semanal)
                 Row(
                   children: [
-                    ChoiceChip(
-                      selected: _company == 0,
-                      label: const Text('Jaysa Muebles'),
-                      onSelected: (_) => setState(() => _company = 0),
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      selected: _company == 1,
-                      label: const Text('Helaco'),
-                      onSelected: (_) => setState(() => _company = 1),
-                    ),
+                    // Mostrar chips solo si el usuario tiene acceso a múltiples compañías
+                    if (session?.user.companies != null &&
+                        session!.user.companies!.length > 1) ...[
+                      if (session.user.companies!.contains('Jaysa Muebles'))
+                        ChoiceChip(
+                          selected: _selectedCompany == 'Jaysa Muebles',
+                          label: const Text('Jaysa Muebles'),
+                          onSelected: (_) {
+                            setState(() => _selectedCompany = 'Jaysa Muebles');
+                            ctrl.setCompany('Jaysa Muebles');
+                          },
+                        ),
+                      if (session.user.companies!.contains('Jaysa Muebles'))
+                        const SizedBox(width: 8),
+                      if (session.user.companies!.contains('Helaco'))
+                        ChoiceChip(
+                          selected: _selectedCompany == 'Helaco',
+                          label: const Text('Helaco'),
+                          onSelected: (_) {
+                            setState(() => _selectedCompany = 'Helaco');
+                            ctrl.setCompany('Helaco');
+                          },
+                        ),
+                    ] else if (session?.user.companies != null &&
+                        session!.user.companies!.length == 1)
+                      // Si solo tiene una compañía, mostrar como texto
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'Compañía: ${session.user.companies![0]}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     const SizedBox(width: 12),
                     const StatusLegend(),
                     const Spacer(),
@@ -209,7 +259,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         onRegister: (employeeName, date) {
                           showDialog(
                             context: context,
-                            builder: (_) => RegisterOptionsModal(employeeName: employeeName, date: date),
+                            builder: (_) => RegisterOptionsModal(
+                                employeeName: employeeName, date: date),
                           );
                         },
                       ),
@@ -241,7 +292,12 @@ class _TableSkeletonLoader extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Row(
             children: [
-              Container(width: 32, height: 32, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(16))),
+              Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(16))),
               const SizedBox(width: 12),
               Expanded(child: Container(height: 12, color: Colors.black12)),
               const SizedBox(width: 12),
@@ -259,7 +315,8 @@ class _TableSkeletonLoader extends StatelessWidget {
 }
 
 class _WeekLabel extends StatelessWidget {
-  const _WeekLabel({required this.range, required this.onPrev, required this.onNext});
+  const _WeekLabel(
+      {required this.range, required this.onPrev, required this.onNext});
   final DateTimeRange range;
   final VoidCallback onPrev;
   final VoidCallback onNext;
@@ -271,10 +328,12 @@ class _WeekLabel extends StatelessWidget {
       final yy = (d.year % 100).toString().padLeft(2, '0');
       return '$dd/$mm/$yy';
     }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       constraints: const BoxConstraints(minWidth: 260),
-      decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+          color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -283,9 +342,11 @@ class _WeekLabel extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
             onPressed: onPrev,
           ),
-          Text(fmt(range.start), style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(fmt(range.start),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(width: 12),
-          Text(fmt(range.end), style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(fmt(range.end),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           IconButton(
             tooltip: 'Próxima semana',
             icon: const Icon(Icons.chevron_right),

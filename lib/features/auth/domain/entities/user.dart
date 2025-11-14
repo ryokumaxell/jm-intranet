@@ -3,13 +3,13 @@ class User {
   final String name;
   final String email;
   final String role;
-  final String company;
+  final List<String>? companies;
 
   const User({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
-    required this.company,
+    this.companies,
   });
 }

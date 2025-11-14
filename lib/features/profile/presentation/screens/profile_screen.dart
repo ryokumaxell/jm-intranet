@@ -59,14 +59,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          const CircleAvatar(radius: 28, child: Icon(Icons.person)),
+                          const CircleAvatar(
+                              radius: 28, child: Icon(Icons.person)),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(session?.user.name ?? 'Invitado', style: AppTextStyles.title),
-                                Text(session?.user.email ?? '', style: AppTextStyles.small.copyWith(color: Colors.black54)),
+                                Text(session?.user.email ?? 'Invitado',
+                                    style: AppTextStyles.title),
+                                Text(session?.user.role ?? '',
+                                    style: AppTextStyles.small
+                                        .copyWith(color: Colors.black54)),
                               ],
                             ),
                           ),
@@ -76,7 +80,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       TextFormField(
                         controller: _nameCtrl,
                         decoration: const InputDecoration(labelText: 'Nombre'),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -84,7 +89,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         decoration: const InputDecoration(labelText: 'Email'),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Requerido';
-                          final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+                          final ok =
+                              RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
                           return ok ? null : 'Email inválido';
                         },
                       ),
@@ -102,9 +108,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () {
-                                if (_formKey.currentState?.validate() != true) return;
+                                if (_formKey.currentState?.validate() != true) {
+                                  return;
+                                }
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Perfil actualizado (placeholder)')),
+                                  const SnackBar(
+                                      content: Text(
+                                          'Perfil actualizado (placeholder)')),
                                 );
                               },
                               icon: const Icon(Icons.save),
@@ -123,9 +133,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               onPressed: () async {
                                 final logout = ref.read(logoutUseCaseProvider);
                                 await logout.call();
-                                ref.read(authSessionProvider.notifier).setSession(null);
+                                ref
+                                    .read(authSessionProvider.notifier)
+                                    .setSession(null);
                                 if (!mounted) return;
-                                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                    '/', (route) => false);
                               },
                               icon: const Icon(Icons.logout),
                               label: const Text('Cerrar sesión'),

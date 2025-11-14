@@ -11,6 +11,7 @@ class AttendanceRecordModel extends AttendanceRecord {
     super.exit,
     required super.hoursWorked,
     required super.status,
+    super.company,
   });
 
   factory AttendanceRecordModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +46,7 @@ class AttendanceRecordModel extends AttendanceRecord {
       exit: parseDateTime(json['exit']),
       hoursWorked: double.tryParse(json['hoursWorked']?.toString() ?? '0') ?? 0,
       status: parseStatus(json['status'] ?? 'leave'),
+      company: json['company']?.toString(),
     );
   }
 
@@ -74,6 +76,7 @@ class AttendanceRecordModel extends AttendanceRecord {
       'exit': exit?.toIso8601String(),
       'hoursWorked': hoursWorked,
       'status': statusToString(status),
+      'company': company,
     };
   }
 }

@@ -72,8 +72,10 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
 
   static AttendanceFilters _initialFilters() {
     final now = DateTime.now();
-    final monday = now.subtract(Duration(days: (now.weekday - DateTime.monday) % 7));
-    final saturday = DateTime(monday.year, monday.month, monday.day).add(const Duration(days: 5));
+    final monday =
+        now.subtract(Duration(days: (now.weekday - DateTime.monday) % 7));
+    final saturday = DateTime(monday.year, monday.month, monday.day)
+        .add(const Duration(days: 5));
     final range = DateTimeRange(start: monday, end: saturday);
     return AttendanceFilters(dateRange: range);
   }
@@ -104,10 +106,17 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     load();
   }
 
+  void setCompany(String? company) {
+    _filters = _filters.copyWith(company: company, page: 0);
+    load();
+  }
+
   void setDateRange(DateTimeRange range) {
     final anchor = range.start;
-    final monday = anchor.subtract(Duration(days: (anchor.weekday - DateTime.monday) % 7));
-    final saturday = DateTime(monday.year, monday.month, monday.day).add(const Duration(days: 5));
+    final monday =
+        anchor.subtract(Duration(days: (anchor.weekday - DateTime.monday) % 7));
+    final saturday = DateTime(monday.year, monday.month, monday.day)
+        .add(const Duration(days: 5));
     final normalized = DateTimeRange(start: monday, end: saturday);
     _filters = _filters.copyWith(dateRange: normalized, page: 0);
     load();
@@ -138,6 +147,7 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
   Timer? _debounce;
 }
 
-final attendanceControllerProvider = AsyncNotifierProvider<AttendanceNotifier, List<AttendanceRecord>>(() {
+final attendanceControllerProvider =
+    AsyncNotifierProvider<AttendanceNotifier, List<AttendanceRecord>>(() {
   return AttendanceNotifier();
 });

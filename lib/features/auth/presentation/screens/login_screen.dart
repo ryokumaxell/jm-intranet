@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:j_intranet/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:j_intranet/features/auth/presentation/providers/auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -61,9 +62,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _email.text.trim(),
         password: _password.text,
       );
-      // You can use the credential object if needed, for example:
-      // ref.read(authSessionProvider.notifier).state = credential.user;
+      // Obtener la sesión del usuario
       if (mounted) {
+        final loginUseCase = ref.read(loginUseCaseProvider);
+        final session = await loginUseCase.call(
+          _email.text.trim(),
+          _password.text,
+        );
+        ref.read(authSessionProvider.notifier).setSession(session);
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );

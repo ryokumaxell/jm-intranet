@@ -5,7 +5,9 @@ class CreateUser {
 
   CreateUser(this.repository);
 
-  Future<void> call(String email, String password, String role, String company) {
-    return repository.createUser(email: email, password: password, role: role, company: company);
+  Future<void> call(
+      String email, String password, String role, List<String> companies) {
+    return repository.createUser(
+        email: email, password: password, role: role, companies: companies);
   }
 }

@@ -148,7 +148,7 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: role,
+                    initialValue: role,
                     items: const [
                       DropdownMenuItem(
                           value: 'super', child: Text('Súper administrador')),
@@ -262,7 +262,7 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: _role,
+                      initialValue: _role,
                       items: const [
                         DropdownMenuItem(
                             value: 'super', child: Text('Súper administrador')),
@@ -323,8 +323,9 @@ class _ProfileManagementScreenState extends State<ProfileManagementScreen> {
                   );
                 }
                 final items = snap.data ?? const [];
-                if (items.isEmpty)
+                if (items.isEmpty) {
                   return const Center(child: Text('No hay usuarios'));
+                }
                 return Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 720),

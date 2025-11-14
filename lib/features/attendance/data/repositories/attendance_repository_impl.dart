@@ -15,6 +15,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       range: filters.dateRange,
       department: filters.department,
       query: filters.query,
+      company: filters.company,
     );
     await local.cacheRecords(items);
     // Sorting

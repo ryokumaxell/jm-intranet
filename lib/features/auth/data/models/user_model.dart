@@ -6,26 +6,28 @@ class UserModel extends User {
     required super.name,
     required super.email,
     required super.role,
-    required super.company,
+    super.companies,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final companies = json['companies'];
     return UserModel(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? 'employee',
-      company: json['company'] ?? '',
+      companies: companies is List ? List<String>.from(companies) : null,
     );
   }
 
   factory UserModel.fromFirestore(Map<String, dynamic> json, String id) {
+    final companies = json['companies'];
     return UserModel(
       id: id,
       name: json['displayName'] ?? '',
       email: json['email'] ?? '',
       role: json['role'] ?? 'employee',
-      company: json['company'] ?? '',
+      companies: companies is List ? List<String>.from(companies) : null,
     );
   }
 
@@ -35,7 +37,7 @@ class UserModel extends User {
       'name': name,
       'email': email,
       'role': role,
-      'company': company,
+      'companies': companies,
     };
   }
 }

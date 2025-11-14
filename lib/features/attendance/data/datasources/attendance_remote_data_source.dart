@@ -7,7 +7,11 @@ class AttendanceRemoteDataSource {
   final Dio dio;
   AttendanceRemoteDataSource(this.dio);
 
-  Future<List<AttendanceRecord>> fetchRecords({required DateTimeRange range, String? department, String query = ''}) async {
+  Future<List<AttendanceRecord>> fetchRecords(
+      {required DateTimeRange range,
+      String? department,
+      String query = '',
+      String? company}) async {
     await Future<void>.delayed(const Duration(milliseconds: 300));
     final now = DateTime.now();
     final sample = <AttendanceRecordModel>[
@@ -21,6 +25,7 @@ class AttendanceRemoteDataSource {
         exit: DateTime(now.year, now.month, now.day - 1, 17, 0),
         hoursWorked: 8,
         status: AttendanceStatus.punctual,
+        company: 'Jaysa Muebles',
       ),
       AttendanceRecordModel(
         id: 'r2',
@@ -32,6 +37,7 @@ class AttendanceRemoteDataSource {
         exit: DateTime(now.year, now.month, now.day - 2, 17, 0),
         hoursWorked: 7.5,
         status: AttendanceStatus.late,
+        company: 'Helaco',
       ),
       AttendanceRecordModel(
         id: 'r3',
@@ -43,13 +49,20 @@ class AttendanceRemoteDataSource {
         exit: null,
         hoursWorked: 0,
         status: AttendanceStatus.absent,
+        company: 'Jaysa Muebles',
       ),
     ];
 
     return sample
         .where((e) => (department == null || e.department == department))
-        .where((e) => query.isEmpty || e.employeeName.toLowerCase().contains(query.toLowerCase()) || e.employeeId.toLowerCase().contains(query.toLowerCase()))
-        .where((e) => e.date.isAfter(range.start.subtract(const Duration(days: 1))) && e.date.isBefore(range.end.add(const Duration(days: 1))))
+        .where((e) => (company == null || e.company == company))
+        .where((e) =>
+            query.isEmpty ||
+            e.employeeName.toLowerCase().contains(query.toLowerCase()) ||
+            e.employeeId.toLowerCase().contains(query.toLowerCase()))
+        .where((e) =>
+            e.date.isAfter(range.start.subtract(const Duration(days: 1))) &&
+            e.date.isBefore(range.end.add(const Duration(days: 1))))
         .toList();
   }
 }
