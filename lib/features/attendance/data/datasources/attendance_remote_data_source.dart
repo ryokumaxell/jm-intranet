@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:convert';
 import '../../domain/entities/attendance_record.dart';
 import '../models/attendance_record_model.dart';
 
@@ -24,8 +26,11 @@ class AttendanceRemoteDataSource {
               r.date.isBefore(range.end.add(const Duration(days: 1))))
           .toList();
 
+      // Combinar múltiples marcas de un mismo colaborador en un día
+      final merged = _mergeRecordsByEmployeeAndDay(filteredByDate);
+
       // Aplicar filtros adicionales
-      return filteredByDate
+      return merged
           .where((e) => (department == null || e.department == department))
           .where((e) =>
               query.isEmpty ||
@@ -41,106 +46,326 @@ class AttendanceRemoteDataSource {
 
   /// Carga registros desde el archivo JSON en assets
   Future<List<AttendanceRecord>> _loadRecordsFromAssets(String? company) async {
+    final records = <AttendanceRecord>[];
+    final employeeRecords = <String, Map<DateTime, AttendanceRecordModel>>{};
+
     try {
-      final records = <AttendanceRecord>[];
-      String companyName = 'Helaco';
+      final companyName = company ?? 'Helaco';
 
-      // Datos de Helaco (25 empleados con sus asistencias)
-      final jsonData = _getHelacoData();
+      // Seleccionar archivos según la compañía
+      final files = companyName == 'Jaysa Muebles'
+          ? <String>[
+              'assets/data/asis_jaysamuebles_01a06-09-25.json',
+              'assets/data/asis_jaysamuebles_02a07-06-25.json',
+              'assets/data/asis_jaysamuebles_03-11-25 a 08-11-25.json',
+              'assets/data/asis_jaysamuebles_04a09-08-25.json',
+              'assets/data/asis_jaysamuebles_06-10-25 a 11-10-25.json',
+              'assets/data/asis_jaysamuebles_07a12-07-25.json',
+              'assets/data/asis_jaysamuebles_08a13-09-25.json',
+              'assets/data/asis_jaysamuebles_09a14-06-25.json',
+              'assets/data/asis_jaysamuebles_11a16-08-25.json',
+              'assets/data/asis_jaysamuebles_12a17-05-25.json',
+              'assets/data/asis_jaysamuebles_13-10-25 a 18-10-25.json',
+              'assets/data/asis_jaysamuebles_14a19-07-25.json',
+              'assets/data/asis_jaysamuebles_15a20-09-25.json',
+              'assets/data/asis_jaysamuebles_16a21-06-25.json',
+              'assets/data/asis_jaysamuebles_18a23-08-25.json',
+              'assets/data/asis_jaysamuebles_19a24-05-25.json',
+              'assets/data/asis_jaysamuebles_20-10-25 a 25-10-25.json',
+              'assets/data/asis_jaysamuebles_21a26-07-25.json',
+              'assets/data/asis_jaysamuebles_22a27-09-25.json',
+              'assets/data/asis_jaysamuebles_23a28-06-25.json',
+              'assets/data/asis_jaysamuebles_25a30-08-25.json',
+              'assets/data/asis_jaysamuebles_26a31-05-25.json',
+              'assets/data/asis_jaysamuebles_27-10-25 a 01-11-25.json',
+              'assets/data/asis_jaysamuebles_28-07a02-08-25.json',
+              'assets/data/asis_jaysamuebles_29-09-25 a 04-10-25.json',
+              'assets/data/asis_jaysamuebles_30-06a04-07-25.json',
+            ]
+          : <String>[
+              'assets/data/asis_helaco_01a06-09-25.json',
+              'assets/data/asis_helaco_02a07-06-25.json',
+              'assets/data/asis_helaco_03-11-25 a 08-11-25.json',
+              'assets/data/asis_helaco_04a09-08-25.json',
+              'assets/data/asis_helaco_06-10-25 a 11-10-25.json',
+              'assets/data/asis_helaco_07a12-07-25.json',
+              'assets/data/asis_helaco_08a13-09-25.json',
+              'assets/data/asis_helaco_09a14-06-25.json',
+              'assets/data/asis_helaco_11a16-08-25.json',
+              'assets/data/asis_helaco_12a17-05-25.json',
+              'assets/data/asis_helaco_13-10-25 a 18-10-25.json',
+              'assets/data/asis_helaco_14a19-07-25.json',
+              'assets/data/asis_helaco_15a20-09-25.json',
+              'assets/data/asis_helaco_16a21-06-25.json',
+              'assets/data/asis_helaco_18a23-08-25.json',
+              'assets/data/asis_helaco_19a24-05-25.json',
+              'assets/data/asis_helaco_20-10-25 a 25-10-25.json',
+              'assets/data/asis_helaco_20-10-25a25-10-25.json',
+              'assets/data/asis_helaco_21a26-07-25.json',
+              'assets/data/asis_helaco_22a27-09-25.json',
+              'assets/data/asis_helaco_23a28-06-25.json',
+              'assets/data/asis_helaco_25a30-08-25.json',
+              'assets/data/asis_helaco_26a31-05-25.json',
+              'assets/data/asis_helaco_27-10-25 a 01-11-25.json',
+              'assets/data/asis_helaco_28-07a02-08-25.json',
+              'assets/data/asis_helaco_29-09-25 a 04-10-25.json',
+              'assets/data/asis_helaco_30-06a04-07-25.json',
+            ];
 
-      if (jsonData == null) {
-        print('No data available for company: $company');
-        return [];
-      }
+      for (final path in files) {
+        try {
+          final byteData = await rootBundle.load(path);
+          final bytes = byteData.buffer.asUint8List();
 
-      for (final item in jsonData) {
-        final colaborador = item['colaborador'] ?? '';
-        final asistencias = item['asistencias'] ?? [];
+          String jsonString;
+          try {
+            jsonString = utf8.decode(bytes);
+          } on FormatException {
+            var startIndex = 0;
+            if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+              startIndex = 2;
+            }
 
-        if (asistencias is List) {
-          for (final asistencia in asistencias) {
-            try {
-              // Parsear la fecha y hora
-              final dateTime = _parseSpanishDateTime(asistencia);
-              if (dateTime != null) {
-                // Determinar si es entrada o salida
-                final hour = dateTime.hour;
-                final isEntry = hour < 12; // Antes del mediodía es entrada
+            final codeUnits = <int>[];
+            for (var i = startIndex; i + 1 < bytes.length; i += 2) {
+              final unit = bytes[i] | (bytes[i + 1] << 8);
+              codeUnits.add(unit);
+            }
+            jsonString = String.fromCharCodes(codeUnits);
+          }
 
-                records.add(AttendanceRecordModel(
-                  id: '${colaborador}_${dateTime.millisecondsSinceEpoch}',
+          final data = jsonDecode(jsonString);
+          if (data is! List) continue;
+
+          for (final item in data) {
+            if (item is! Map) continue;
+            final colaborador = item['colaborador'] as String? ?? '';
+            final asistencias = item['asistencias'] as List<dynamic>? ?? const [];
+            if (colaborador.isEmpty || asistencias.isEmpty) continue;
+
+            // Initialize employee record if not exists
+            if (!employeeRecords.containsKey(colaborador)) {
+              employeeRecords[colaborador] = {};
+            }
+            final employeeDays = employeeRecords[colaborador]!;
+
+            // Process each attendance record
+            for (final raw in asistencias) {
+              if (raw is! String) continue;
+              final dateTime = _parseSpanishDateTime(raw);
+              if (dateTime == null) continue;
+
+              // Get the day (date without time)
+              final day = DateTime(dateTime.year, dateTime.month, dateTime.day);
+              final isEntry = dateTime.hour < 12;
+
+              // If we don't have a record for this day, create one
+              if (!employeeDays.containsKey(day)) {
+                employeeDays[day] = AttendanceRecordModel(
+                  id: '${colaborador}_${day.millisecondsSinceEpoch}',
+                  employeeName: colaborador,
+                  employeeId: colaborador,
+                  department: 'General',
+                  date: day,
+                  entry: isEntry ? dateTime : null,
+                  exit: !isEntry ? dateTime : null,
+                  hoursWorked: 8.0,
+                  status: isEntry ? _calculateStatus(dateTime) : AttendanceStatus.punctual,
+                  company: companyName,
+                );
+              } else {
+                // Update existing record with entry or exit time
+                final existing = employeeDays[day]!;
+                if (isEntry) {
+                  employeeDays[day] = AttendanceRecordModel(
+                    id: existing.id,
+                    employeeName: existing.employeeName,
+                    employeeId: existing.employeeId,
+                    department: existing.department,
+                    date: existing.date,
+                    entry: dateTime,
+                    exit: existing.exit,
+                    hoursWorked: existing.hoursWorked,
+                    status: _calculateStatus(dateTime),
+                    company: existing.company,
+                  );
+                } else {
+                  employeeDays[day] = AttendanceRecordModel(
+                    id: existing.id,
+                    employeeName: existing.employeeName,
+                    employeeId: existing.employeeId,
+                    department: existing.department,
+                    date: existing.date,
+                    entry: existing.entry,
+                    exit: dateTime,
+                    hoursWorked: existing.hoursWorked,
+                    status: existing.status,
+                    company: existing.company,
+                  );
+                }
+              }
+            },
                   employeeName: colaborador,
                   employeeId: colaborador,
                   department: 'General',
                   date: dateTime,
                   entry: isEntry ? dateTime : null,
                   exit: !isEntry ? dateTime : null,
-                  hoursWorked: 0,
-                  status: _calculateStatus(dateTime),
+                  hoursWorked: 8.0,
+                  status: isEntry ? _calculateStatus(dateTime) : AttendanceStatus.punctual,
                   company: companyName,
-                ));
-              }
-            } catch (e) {
-              print('Error parsing asistencia: $e');
+                ),
+              )
+            }
             }
           }
+        } catch (e) {
+          print('Error leyendo $path: $e');
         }
       }
 
-      return records;
-    } catch (e) {
+      // Flatten the employee records map into a single list
+      final allRecords = <AttendanceRecord>[];
+      for (final employee in employeeRecords.values) {
+        allRecords.addAll(employee.values);
+      }
+
+      print('✅ Cargados ${allRecords.length} registros para $companyName');
+      return allRecords;
+    } List catch (e) {
       print('Error loading records from assets: $e');
       return [];
     }
   }
 
+  List<AttendanceRecord> _mergeRecordsByEmployeeAndDay(
+    List<AttendanceRecord> items,
+  ) {
+    final map = <String, Map<DateTime, AttendanceRecordModel>>{};
+
+    for (final r in items) {
+      final key = r.employeeId.isNotEmpty ? r.employeeId : r.employeeName;
+      final day = DateTime(r.date.year, r.date.month, r.date.day);
+      final byDay =
+          map.putIfAbsent(key, () => <DateTime, AttendanceRecordModel>{});
+      final current = byDay[day];
+
+      if (current == null) {
+        byDay[day] = AttendanceRecordModel(
+          id: r.id,
+          employeeName: r.employeeName,
+          employeeId: r.employeeId,
+          department: r.department,
+          date: day,
+          entry: r.entry,
+          exit: r.exit,
+          hoursWorked: r.hoursWorked,
+          status: r.status,
+          company: r.company,
+        );
+        continue;
+      }
+
+      DateTime? entry = current.entry;
+      DateTime? exit = current.exit;
+
+      if (r.entry != null) {
+        if (entry == null || r.entry!.isBefore(entry)) {
+          entry = r.entry;
+        }
+      }
+      if (r.exit != null) {
+        if (exit == null || r.exit!.isAfter(exit)) {
+          exit = r.exit;
+        }
+      }
+
+      final status = entry != null ? _calculateStatus(entry) : current.status;
+
+      byDay[day] = AttendanceRecordModel(
+        id: current.id,
+        employeeName: current.employeeName,
+        employeeId: current.employeeId,
+        department: current.department,
+        date: day,
+        entry: entry,
+        exit: exit,
+        hoursWorked: current.hoursWorked,
+        status: status,
+        company: current.company,
+      );
+    }
+
+    final result = <AttendanceRecord>[];
+    for (final byDay in map.values) {
+      result.addAll(byDay.values);
+    }
+    return result;
+  }
+
   /// Parsea una fecha en formato español: "lunes, 20 de octubre de 2025 7:27:00 AM"
-  DateTime? _parseSpanishDateTime(String dateString) {
+  DateTime? _parseSpanishDateTime(String dateStr) {
     try {
-      // Ejemplo: "lunes, 20 de octubre de 2025 7:27:00 AM"
-      final parts = dateString.split(' ');
-      if (parts.length < 5) return null;
+      // Paso 1: Remover día de la semana (todo antes de la primera coma)
+      final commaIndex = dateStr.indexOf(',');
+      if (commaIndex == -1) return null;
 
-      // Extraer día, mes, año
-      final day = int.tryParse(parts[1].replaceAll(',', '')) ?? 0;
-      final monthName = parts[3];
-      final year = int.tryParse(parts[4]) ?? 0;
+      String cleaned = dateStr.substring(commaIndex + 1).trim();
 
-      // Mapear mes en español a número
-      final monthMap = {
-        'enero': 1,
-        'febrero': 2,
-        'marzo': 3,
-        'abril': 4,
-        'mayo': 5,
-        'junio': 6,
-        'julio': 7,
-        'agosto': 8,
-        'septiembre': 9,
-        'octubre': 10,
-        'noviembre': 11,
-        'diciembre': 12,
-      };
+      // Paso 2: Reemplazar nombres de meses en español por números
+      cleaned = cleaned
+          .replaceAll('enero', '01')
+          .replaceAll('febrero', '02')
+          .replaceAll('marzo', '03')
+          .replaceAll('abril', '04')
+          .replaceAll('mayo', '05')
+          .replaceAll('junio', '06')
+          .replaceAll('julio', '07')
+          .replaceAll('agosto', '08')
+          .replaceAll('septiembre', '09')
+          .replaceAll('octubre', '10')
+          .replaceAll('noviembre', '11')
+          .replaceAll('diciembre', '12');
 
-      final month = monthMap[monthName.toLowerCase()] ?? 0;
-      if (month == 0) return null;
+      // Paso 3: Remover "de " para normalizar
+      cleaned = cleaned.replaceAll(' de ', ' ');
 
-      // Extraer hora, minuto, segundo y AM/PM
-      final timeParts = parts[5].split(':');
+      // Ahora debería ser: "20 10 2025 7:27:00 AM"
+      final parts = cleaned.trim().split(RegExp(r'\s+'));
+
+      if (parts.length < 5) {
+        return null;
+      }
+
+      final day = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      final year = int.tryParse(parts[2]);
+      final timeStr = parts[3]; // "7:27:00"
+      final ampm = parts[4]; // "AM" o "PM"
+
+      if (day == null || month == null || year == null) {
+        return null;
+      }
+
+      // Parsear hora
+      final timeParts = timeStr.split(':');
+      if (timeParts.length < 2) {
+        return null;
+      }
+
       var hour = int.tryParse(timeParts[0]) ?? 0;
       final minute = int.tryParse(timeParts[1]) ?? 0;
-      final second = int.tryParse(timeParts[2]) ?? 0;
 
-      // Ajustar hora si es PM
-      if (parts[6].toUpperCase() == 'PM' && hour != 12) {
+      // Ajustar para formato 24 horas
+      if (ampm.toUpperCase() == 'PM' && hour != 12) {
         hour += 12;
-      } else if (parts[6].toUpperCase() == 'AM' && hour == 12) {
+      } else if (ampm.toUpperCase() == 'AM' && hour == 12) {
         hour = 0;
       }
 
-      return DateTime(year, month, day, hour, minute, second);
+      return DateTime(year, month, day, hour, minute);
     } catch (e) {
-      print('Error parsing date: $e');
+      print('Error parsing date: $dateStr - $e');
       return null;
     }
   }
@@ -162,282 +387,6 @@ class AttendanceRemoteDataSource {
 
     // Si es salida, considerar punctual (presente)
     return AttendanceStatus.punctual;
-  }
-
-  /// Devuelve los datos de Helaco directamente
-  List<dynamic>? _getHelacoData() {
-    return [
-      {
-        "colaborador": "Juan De La Cruz",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:27:00 AM",
-          "lunes, 20 de octubre de 2025 5:01:00 PM",
-          "martes, 21 de octubre de 2025 8:01:00 AM",
-          "martes, 21 de octubre de 2025 4:02:00 PM",
-          "miércoles, 22 de octubre de 2025 7:44:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Carlos Cornielle Feliz",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:53:00 AM",
-          "lunes, 20 de octubre de 2025 5:01:00 PM",
-          "martes, 21 de octubre de 2025 8:01:00 AM",
-          "martes, 21 de octubre de 2025 3:57:00 PM",
-          "miércoles, 22 de octubre de 2025 7:44:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Albelto Leon",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:48:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:33:00 AM",
-          "martes, 21 de octubre de 2025 4:22:00 PM",
-          "miércoles, 22 de octubre de 2025 8:15:00 AM",
-          "miércoles, 22 de octubre de 2025 12:50:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Johan Marcelo Marcelo",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:37:00 AM",
-          "lunes, 20 de octubre de 2025 5:01:00 PM",
-          "martes, 21 de octubre de 2025 7:58:00 AM",
-          "martes, 21 de octubre de 2025 4:26:00 PM",
-          "miércoles, 22 de octubre de 2025 7:27:00 AM",
-          "miércoles, 22 de octubre de 2025 12:59:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Andres Miscael Mateo",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:44:00 AM",
-          "lunes, 20 de octubre de 2025 4:59:00 PM",
-          "martes, 21 de octubre de 2025 7:33:00 AM",
-          "martes, 21 de octubre de 2025 3:52:00 PM",
-          "miércoles, 22 de octubre de 2025 7:21:00 AM",
-          "miércoles, 22 de octubre de 2025 1:32:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Dioris Almonte",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 6:04:00 AM",
-          "lunes, 20 de octubre de 2025 7:49:00 PM",
-          "martes, 21 de octubre de 2025 7:53:00 AM",
-          "martes, 21 de octubre de 2025 3:48:00 PM",
-          "miércoles, 22 de octubre de 2025 8:03:00 AM",
-          "miércoles, 22 de octubre de 2025 1:09:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Luis Bodre",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:51:00 AM",
-          "lunes, 20 de octubre de 2025 5:13:00 PM",
-          "martes, 21 de octubre de 2025 8:06:00 AM",
-          "martes, 21 de octubre de 2025 4:31:00 PM",
-          "miércoles, 22 de octubre de 2025 8:04:00 AM",
-          "miércoles, 22 de octubre de 2025 1:03:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Femari Rojas",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:46:00 AM",
-          "martes, 21 de octubre de 2025 7:53:00 AM",
-          "martes, 21 de octubre de 2025 4:33:00 PM",
-          "miércoles, 22 de octubre de 2025 7:58:00 AM",
-          "miércoles, 22 de octubre de 2025 1:19:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Isaias Cedano",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:41:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:43:00 AM",
-          "martes, 21 de octubre de 2025 3:49:00 PM",
-          "miércoles, 22 de octubre de 2025 7:23:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Michael Encarnacion",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 8:05:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:02:00 AM",
-          "miércoles, 22 de octubre de 2025 7:57:00 AM",
-          "miércoles, 22 de octubre de 2025 12:56:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Pedro Olivares",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:02:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:01:00 AM",
-          "martes, 21 de octubre de 2025 3:49:00 PM",
-          "miércoles, 22 de octubre de 2025 6:52:00 AM",
-          "miércoles, 22 de octubre de 2025 12:56:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Diuchensy Ortiz",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 6:51:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 6:41:00 AM",
-          "miércoles, 22 de octubre de 2025 6:12:00 AM"
-        ]
-      },
-      {
-        "colaborador": "Zusana Encarnacion",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:42:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:00:00 AM",
-          "martes, 21 de octubre de 2025 4:04:00 PM",
-          "miércoles, 22 de octubre de 2025 7:47:00 AM",
-          "miércoles, 22 de octubre de 2025 1:01:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Esnaider Jean",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:53:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:01:00 AM",
-          "martes, 21 de octubre de 2025 4:01:00 PM",
-          "miércoles, 22 de octubre de 2025 7:44:00 AM",
-          "miércoles, 22 de octubre de 2025 1:09:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Carlos Montero",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 8:05:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:53:00 AM",
-          "miércoles, 22 de octubre de 2025 7:54:00 AM",
-          "miércoles, 22 de octubre de 2025 12:56:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Argeny Vicente",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 6:04:00 AM",
-          "lunes, 20 de octubre de 2025 7:49:00 PM",
-          "martes, 21 de octubre de 2025 8:00:00 AM",
-          "miércoles, 22 de octubre de 2025 7:48:00 AM",
-          "miércoles, 22 de octubre de 2025 1:09:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Juan Nepomuseno",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:47:00 AM",
-          "lunes, 20 de octubre de 2025 5:01:00 PM",
-          "martes, 21 de octubre de 2025 7:59:00 AM",
-          "martes, 21 de octubre de 2025 3:53:00 PM",
-          "miércoles, 22 de octubre de 2025 8:06:00 AM",
-          "miércoles, 22 de octubre de 2025 12:23:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Alexander Pena",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:28:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:28:00 AM",
-          "martes, 21 de octubre de 2025 3:50:00 PM",
-          "miércoles, 22 de octubre de 2025 7:30:00 AM",
-          "miércoles, 22 de octubre de 2025 12:56:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Luis Bello",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:54:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:01:00 AM",
-          "miércoles, 22 de octubre de 2025 8:03:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Frank Laureano",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:51:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:59:00 AM",
-          "martes, 21 de octubre de 2025 3:49:00 PM",
-          "miércoles, 22 de octubre de 2025 7:45:00 AM",
-          "miércoles, 22 de octubre de 2025 1:33:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Wilkin Heredia",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:34:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:36:00 AM",
-          "miércoles, 22 de octubre de 2025 7:24:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Moises Valentin",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:19:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 7:22:00 AM",
-          "miércoles, 22 de octubre de 2025 6:51:00 AM",
-          "miércoles, 22 de octubre de 2025 12:57:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Henry Paniagua",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:01:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 6:39:00 AM",
-          "martes, 21 de octubre de 2025 3:57:00 PM",
-          "miércoles, 22 de octubre de 2025 7:08:00 AM",
-          "miércoles, 22 de octubre de 2025 12:19:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Ronny Santana",
-        "asistencias": [
-          "martes, 21 de octubre de 2025 6:38:00 AM",
-          "martes, 21 de octubre de 2025 3:50:00 PM",
-          "miércoles, 22 de octubre de 2025 7:07:00 AM"
-        ]
-      },
-      {
-        "colaborador": "Jose Tineo",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:43:00 AM",
-          "lunes, 20 de octubre de 2025 5:00:00 PM",
-          "martes, 21 de octubre de 2025 8:00:00 AM",
-          "miércoles, 22 de octubre de 2025 7:48:00 AM",
-          "miércoles, 22 de octubre de 2025 12:56:00 PM"
-        ]
-      },
-      {
-        "colaborador": "Maria Bencosme",
-        "asistencias": [
-          "lunes, 20 de octubre de 2025 7:54:00 AM",
-          "lunes, 20 de octubre de 2025 5:11:00 PM",
-          "miércoles, 22 de octubre de 2025 1:19:00 PM"
-        ]
-      }
-    ];
   }
 
   List<AttendanceRecord> _getFallbackData(

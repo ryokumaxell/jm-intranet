@@ -10,47 +10,6 @@ import '../../domain/usecases/get_attendance_records.dart';
 import '../../data/datasources/attendance_remote_data_source.dart';
 import '../../data/datasources/attendance_local_data_source.dart';
 import '../../data/repositories/attendance_repository_impl.dart';
-// Import AttendanceFilters from here
-
-// class AttendanceFilters {
-//   final DateTimeRange dateRange;
-//   final String? department;
-//   final String? query;
-//   final String? sortBy;
-//   final bool ascending;
-//   final int page;
-//   final int pageSize;
-
-//   const AttendanceFilters({
-//     required this.dateRange,
-//     this.department,
-//     this.query,
-//     this.sortBy,
-//     this.ascending = true,
-//     this.page = 0,
-//     this.pageSize = 10,
-//   });
-
-//   AttendanceFilters copyWith({
-//     DateTimeRange? dateRange,
-//     String? department,
-//     String? query,
-//     String? sortBy,
-//     bool? ascending,
-//     int? page,
-//     int? pageSize,
-//   }) {
-//     return AttendanceFilters(
-//       dateRange: dateRange ?? this.dateRange,
-//       department: department ?? this.department,
-//       query: query ?? this.query,
-//       sortBy: sortBy ?? this.sortBy,
-//       ascending: ascending ?? this.ascending,
-//       page: page ?? this.page,
-//       pageSize: pageSize ?? this.pageSize,
-//     );
-//   }
-// }
 
 final attendanceRepositoryProvider = Provider<AttendanceRepository>((ref) {
   final dio = ref.watch(dioProvider);

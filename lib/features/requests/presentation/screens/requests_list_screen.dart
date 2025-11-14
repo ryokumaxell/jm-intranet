@@ -44,7 +44,7 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
         actions: [
           const Icon(Icons.notifications_none),
           const SizedBox(width: 8),
-          Text(session?.user.email ?? 'Invitado', style: AppTextStyles.body),
+          Text(session?.user.name ?? 'Invitado', style: AppTextStyles.body),
           const SizedBox(width: 12),
         ],
       ),
@@ -133,41 +133,13 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
           final tardanzas =
               requests.where((e) => e.type == RequestType.tardiness).toList();
 
-          // Si no hay solicitudes, mostrar mensaje
-          if (requests.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No tienes solicitudes',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Crea una nueva solicitud haciendo clic en el botón +',
-                    style: TextStyle(color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return LayoutBuilder(
             builder: (context, constraints) {
               final w = constraints.maxWidth;
               int cols = 1;
               if (w >= 1200) {
                 cols = 3;
-              } else if (w >= 800) {
-                cols = 2;
-              }
+              } else if (w >= 800) cols = 2;
               final sections = [
                 _RequestsSection(
                     title: 'Permisos pendientes', items: permisosPendientes),
@@ -191,141 +163,25 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-              const SizedBox(height: 16),
-              Text(
-                'Error al cargar solicitudes',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red[600],
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$err',
-                style: TextStyle(color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _showCreateRequestDialog(context, ref);
+        onPressed: () async {
+          // Ejemplo: agregar una solicitud de vacaciones
+          final session = ref.read(authSessionProvider);
+          if (session != null) {
+            await ref.read(requestsProvider.notifier).add(
+                  type: 'vacation',
+                  employeeId: session.user.id,
+                  employeeName: session.user.email,
+                  employeeEmail: session.user.email,
+                  startDate: DateTime.now(),
+                  reason: 'Demo request',
+                );
+          }
         },
         icon: const Icon(Icons.add),
-        label: const Text('Nueva solicitud'),
-      ),
-    );
-  }
-
-  void _showCreateRequestDialog(BuildContext context, WidgetRef ref) {
-    String selectedType = 'vacation';
-    final dateCtrl = TextEditingController();
-    final reasonCtrl = TextEditingController();
-    final session = ref.read(authSessionProvider);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nueva Solicitud'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                initialValue: selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Tipo de solicitud',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                      value: 'vacation', child: Text('Vacaciones')),
-                  DropdownMenuItem(value: 'permission', child: Text('Permiso')),
-                ],
-                onChanged: (value) {
-                  selectedType = value ?? 'vacation';
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: dateCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Fecha de inicio',
-                  border: OutlineInputBorder(),
-                  hintText: 'YYYY-MM-DD',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: reasonCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Motivo/Descripción',
-                  border: OutlineInputBorder(),
-                  hintText: 'Describe tu solicitud...',
-                ),
-                maxLines: 3,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (dateCtrl.text.isEmpty || reasonCtrl.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Completa todos los campos')),
-                );
-                return;
-              }
-              try {
-                final startDate = DateTime.tryParse(dateCtrl.text);
-                if (startDate == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content:
-                            Text('Fecha inválida. Usa formato YYYY-MM-DD')),
-                  );
-                  return;
-                }
-
-                await ref.read(requestsProvider.notifier).add(
-                      type: selectedType,
-                      employeeId: session?.user.id ?? '',
-                      employeeName: session?.user.name ?? '',
-                      employeeEmail: session?.user.email ?? '',
-                      startDate: startDate,
-                      reason: reasonCtrl.text,
-                    );
-                if (context.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Solicitud creada exitosamente')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Crear'),
-          ),
-        ],
+        label: const Text('Agregar demo'),
       ),
     );
   }

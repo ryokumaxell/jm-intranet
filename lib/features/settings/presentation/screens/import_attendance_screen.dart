@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:j_intranet/core/constants/app_colors.dart';
 import '../../.././attendance/data/datasources/attendance_import_service.dart';
+import '../../.././attendance/data/datasources/attendance_assets_loader.dart';
 
 class ImportAttendanceScreen extends StatefulWidget {
   const ImportAttendanceScreen({super.key});
@@ -16,6 +17,26 @@ class _ImportAttendanceScreenState extends State<ImportAttendanceScreen> {
   final _jsonController = TextEditingController();
   String _selectedCompany = 'Jaysa Muebles';
   bool _isLoading = false;
+  List<Map<String, String>> _availableFiles = [];
+  String? _selectedFilePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailableFiles();
+  }
+
+  Future<void> _loadAvailableFiles() async {
+    try {
+      final loader = AttendanceAssetsLoader(FirebaseFirestore.instance);
+      final files = await loader.getAvailableFilesWithDates();
+      setState(() {
+        _availableFiles = files;
+      });
+    } catch (e) {
+      print('Error cargando archivos: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -70,6 +91,30 @@ class _ImportAttendanceScreenState extends State<ImportAttendanceScreen> {
 
   void _clearJson() {
     _jsonController.clear();
+    setState(() {
+      _selectedFilePath = null;
+    });
+  }
+
+  Future<void> _loadFileFromAssets(String filePath) async {
+    try {
+      setState(() => _isLoading = true);
+      final jsonString = await rootBundle.loadString(filePath);
+      _jsonController.text = jsonString;
+
+      // Detectar compañía del archivo
+      if (filePath.contains('helaco')) {
+        setState(() => _selectedCompany = 'Helaco');
+      } else if (filePath.contains('jaysa')) {
+        setState(() => _selectedCompany = 'Jaysa Muebles');
+      }
+
+      _showSnackBar('✅ Archivo cargado correctamente', Colors.green);
+    } catch (e) {
+      _showSnackBar('❌ Error cargando archivo: $e', Colors.red);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -121,6 +166,82 @@ class _ImportAttendanceScreenState extends State<ImportAttendanceScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // Archivos disponibles
+              const Text(
+                'Archivos Disponibles',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_availableFiles.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Cargando archivos...',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _availableFiles.length,
+                    itemBuilder: (context, index) {
+                      final file = _availableFiles[index];
+                      final isSelected = _selectedFilePath == file['path'];
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: index > 0
+                              ? Border(
+                                  top: BorderSide(color: Colors.grey[200]!))
+                              : null,
+                        ),
+                        child: ListTile(
+                          selected: isSelected,
+                          selectedTileColor: Colors.blue[50],
+                          onTap: _isLoading
+                              ? null
+                              : () async {
+                                  setState(
+                                      () => _selectedFilePath = file['path']);
+                                  await _loadFileFromAssets(file['path']!);
+                                },
+                          leading: Icon(
+                            Icons.calendar_today,
+                            color: isSelected ? Colors.blue : Colors.grey,
+                          ),
+                          title: Text(
+                            '${file['company']} - ${file['dateRange']}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(Icons.check_circle,
+                                  color: Colors.blue)
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               const SizedBox(height: 20),
 
               // Selección de compañía

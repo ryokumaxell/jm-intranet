@@ -81,8 +81,14 @@ class AttendanceImportService {
   /// "lunes, 20 de octubre de 2025 7:27:00 AM"
   DateTime? _parseSpanishDateTime(String dateStr) {
     try {
-      // Reemplazar nombres de meses en español
-      String normalizedStr = dateStr
+      // Paso 1: Remover día de la semana (todo antes de la primera coma)
+      final commaIndex = dateStr.indexOf(',');
+      if (commaIndex == -1) return null;
+
+      String cleaned = dateStr.substring(commaIndex + 1).trim();
+
+      // Paso 2: Reemplazar nombres de meses en español por números
+      cleaned = cleaned
           .replaceAll('enero', '01')
           .replaceAll('febrero', '02')
           .replaceAll('marzo', '03')
@@ -94,39 +100,46 @@ class AttendanceImportService {
           .replaceAll('septiembre', '09')
           .replaceAll('octubre', '10')
           .replaceAll('noviembre', '11')
-          .replaceAll('diciembre', '12')
-          // Remover día de la semana
-          .replaceAll(RegExp(r'lunes,\s*'), '')
-          .replaceAll(RegExp(r'martes,\s*'), '')
-          .replaceAll(RegExp(r'miércoles,\s*'), '')
-          .replaceAll(RegExp(r'jueves,\s*'), '')
-          .replaceAll(RegExp(r'viernes,\s*'), '')
-          .replaceAll(RegExp(r'sábado,\s*'), '')
-          .replaceAll(RegExp(r'domingo,\s*'), '')
-          .replaceAll('de ', '');
+          .replaceAll('diciembre', '12');
 
-      // Parsear: "20 10 2025 7:27:00 AM"
-      // Formato: "dd MM yyyy h:mm:ss a"
-      final parts = normalizedStr.trim().split(' ');
-      if (parts.length < 4) return null;
+      // Paso 3: Remover "de " para normalizar
+      cleaned = cleaned.replaceAll(' de ', ' ');
+
+      // Ahora debería ser: "20 10 2025 7:27:00 AM"
+      final parts = cleaned.trim().split(RegExp(r'\s+'));
+
+      if (parts.length < 5) {
+        print('No hay suficientes partes: $parts (original: $dateStr)');
+        return null;
+      }
 
       final day = int.tryParse(parts[0]);
       final month = int.tryParse(parts[1]);
       final year = int.tryParse(parts[2]);
-      final timeStr = '${parts[3]} ${parts.length > 4 ? parts[4] : 'AM'}';
+      final timeStr = parts[3]; // "7:27:00"
+      final ampm = parts[4]; // "AM" o "PM"
 
-      if (day == null || month == null || year == null) return null;
+      if (day == null || month == null || year == null) {
+        print('Valores nulos: day=$day, month=$month, year=$year');
+        return null;
+      }
 
       // Parsear hora
       final timeParts = timeStr.split(':');
-      if (timeParts.length < 2) return null;
+      if (timeParts.length < 2) {
+        print('Formato de hora inválido: $timeStr');
+        return null;
+      }
 
       var hour = int.tryParse(timeParts[0]) ?? 0;
       final minute = int.tryParse(timeParts[1]) ?? 0;
-      final isPM = timeStr.contains('PM');
 
-      if (isPM && hour != 12) hour += 12;
-      if (!isPM && hour == 12) hour = 0;
+      // Ajustar para formato 24 horas
+      if (ampm.toUpperCase() == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (ampm.toUpperCase() == 'AM' && hour == 12) {
+        hour = 0;
+      }
 
       return DateTime(year, month, day, hour, minute);
     } catch (e) {

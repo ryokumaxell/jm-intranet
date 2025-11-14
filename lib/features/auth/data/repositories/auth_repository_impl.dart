@@ -29,6 +29,9 @@ class AuthRepositoryImpl implements AuthRepository {
       required String role,
       required List<String> companies}) {
     return remote.createUser(
-        email: email, password: password, role: role, companies: companies);
+        email: email,
+        password: password,
+        role: role,
+        company: companies.isNotEmpty ? companies.first : '');
   }
 }

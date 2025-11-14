@@ -18,7 +18,7 @@ class AttendanceFilters {
     this.sortBy = 'date',
     this.ascending = false,
     this.page = 0,
-    this.pageSize = 10,
+    this.pageSize = 1000,
     this.company,
   });
 

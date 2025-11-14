@@ -45,16 +45,15 @@ class AuthRemoteDataSource {
       {required String email,
       required String password,
       required String role,
-      required List<String> companies}) async {
+      required String company}) async {
     final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email, password: password);
     final userUid = userCredential.user!.uid;
     await _firestore.collection('users').doc(userUid).set({
       'email': email,
       'role': role,
-      'companies': companies,
+      'company': company,
       'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
     });
     final userDoc = await _firestore.collection('users').doc(userUid).get();
     return UserModel.fromFirestore(userDoc.data()!, userUid);
