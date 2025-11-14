@@ -121,6 +121,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.event_available_outlined),
+              title: const Text('Asistencia'),
+              selected: true,
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.people_alt_outlined),
               title: const Text('Empleados'),
               onTap: () {
@@ -139,14 +147,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const RequestsListScreen()),
                 );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.event_available_outlined),
-              title: const Text('Asistencia'),
-              selected: true,
-              onTap: () {
-                Navigator.pop(context);
               },
             ),
             ListTile(

@@ -68,6 +68,16 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.event_available_outlined),
+              title: const Text('Asistencia'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.people_alt_outlined),
               title: const Text('Empleados'),
               onTap: () {
@@ -84,16 +94,6 @@ class _RequestsListScreenState extends ConsumerState<RequestsListScreen> {
               selected: true,
               onTap: () {
                 Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.event_available_outlined),
-              title: const Text('Asistencia'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
-                );
               },
             ),
             ListTile(

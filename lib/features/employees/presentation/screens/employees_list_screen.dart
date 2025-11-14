@@ -68,6 +68,16 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.event_available_outlined),
+              title: const Text('Asistencia'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.people_alt_outlined),
               title: const Text('Empleados'),
               selected: true,
@@ -82,16 +92,6 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> {
                 Navigator.pop(context);
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const RequestsListScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.event_available_outlined),
-              title: const Text('Asistencia'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
                 );
               },
             ),
