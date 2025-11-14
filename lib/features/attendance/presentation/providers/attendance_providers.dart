@@ -50,7 +50,13 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
   }
 
   Future<void> load() async {
-    state = const AsyncValue.loading();
+    final repo = ref.read(attendanceRepositoryProvider);
+    final cached = await repo.getCachedWeek(_filters.dateRange, _filters.company);
+    if (cached.isNotEmpty) {
+      state = AsyncValue.data(cached);
+    } else {
+      state = const AsyncValue.loading();
+    }
     state = await AsyncValue.guard(() => _fetchAttendanceRecords());
   }
 

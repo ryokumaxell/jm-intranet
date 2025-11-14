@@ -47,4 +47,5 @@ class AttendanceFilters {
 
 abstract class AttendanceRepository {
   Future<List<AttendanceRecord>> fetchRecords(AttendanceFilters filters);
+  Future<List<AttendanceRecord>> getCachedWeek(DateTimeRange range, String? company);
 }

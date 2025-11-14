@@ -293,7 +293,7 @@ class _WeekNavigator extends ConsumerWidget {
   }
 }
 
-class _TableSection extends ConsumerWidget {
+  class _TableSection extends ConsumerWidget {
   const _TableSection({required this.onRegister});
   final void Function(String employeeName, DateTime date) onRegister;
 
@@ -306,8 +306,24 @@ class _TableSection extends ConsumerWidget {
     final records = ref.watch(
       attendanceControllerProvider.select((state) => state.maybeWhen(data: (records) => records, orElse: () => <AttendanceRecord>[])),
     );
-    if (isLoading) return const _TableSkeletonLoader();
-    return WeeklyAttendanceTable(records: records, range: ctrl.filters.dateRange, onRegister: onRegister);
+    return Stack(
+      children: [
+        WeeklyAttendanceTable(records: records, range: ctrl.filters.dateRange, onRegister: onRegister),
+        if (isLoading) const Positioned.fill(child: _LoadingOverlay()),
+      ],
+    );
+  }
+}
+
+class _LoadingOverlay extends StatelessWidget {
+  const _LoadingOverlay();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black26,
+      alignment: Alignment.center,
+      child: const SizedBox(width: 48, height: 48, child: CircularProgressIndicator()),
+    );
   }
 }
 

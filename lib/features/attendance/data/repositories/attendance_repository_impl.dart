@@ -1,4 +1,5 @@
 import '../../domain/entities/attendance_record.dart';
+import 'package:flutter/material.dart';
 import '../../domain/repositories/attendance_repository.dart';
 import '../datasources/attendance_remote_data_source.dart';
 import '../datasources/attendance_local_data_source.dart';
@@ -17,7 +18,7 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
       query: filters.query,
       company: filters.company,
     );
-    await local.cacheRecords(items);
+    await local.cacheWeek(filters.dateRange, filters.company, items);
     // Sorting
     items.sort((a, b) {
       int cmp;
@@ -39,5 +40,10 @@ class AttendanceRepositoryImpl implements AttendanceRepository {
     final end = (start + filters.pageSize).clamp(0, items.length);
     if (start >= items.length) return const [];
     return items.sublist(start, end);
+  }
+
+  @override
+  Future<List<AttendanceRecord>> getCachedWeek(DateTimeRange range, String? company) {
+    return local.getCachedWeek(range, company);
   }
 }
