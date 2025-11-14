@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:j_intranet/firebase_options.dart';
 import 'core/providers/theme_provider.dart';
 import 'package:j_intranet/features/auth/presentation/screens/login_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:j_intranet/features/requests/presentation/screens/permissions_pin_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,21 @@ class JIntranetApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
-    return MaterialApp(
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: 'jaysamuebleintranet.web.app/formulario',
+          builder: (context, state) => const PermissionsFormScreen(),
+        ),
+      ],
+    );
+
+    return MaterialApp.router(
       title: AppConstants.appName,
       themeMode: mode,
       theme: ThemeData(
@@ -34,7 +50,7 @@ class JIntranetApp extends ConsumerWidget {
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      routerConfig: router,
     );
   }
 }
