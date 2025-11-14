@@ -37,26 +37,33 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           .read(attendanceControllerProvider.notifier)
           .setQuery(_searchCtrl.text);
     });
-    // Inicializar compañía según el usuario
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Inicializar compañía según el usuario y cargar datos de JSON
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final session = ref.read(authSessionProvider);
+
+      // Seleccionar compañía
       if (session?.user.companies != null &&
           session!.user.companies!.isNotEmpty) {
         // Si el usuario solo tiene acceso a una compañía, seleccionarla automáticamente
         if (session.user.companies!.length == 1) {
           _selectedCompany = session.user.companies![0];
-          ref
-              .read(attendanceControllerProvider.notifier)
-              .setCompany(_selectedCompany);
         } else {
-          // Si tiene acceso a múltiples, seleccionar la primera
-          _selectedCompany = session.user.companies![0];
-          ref
-              .read(attendanceControllerProvider.notifier)
-              .setCompany(_selectedCompany);
+          // Si tiene acceso a múltiples, seleccionar Helaco por defecto si está disponible
+          if (session.user.companies!.contains('Helaco')) {
+            _selectedCompany = 'Helaco';
+          } else {
+            _selectedCompany = session.user.companies![0];
+          }
         }
+
+        ref
+            .read(attendanceControllerProvider.notifier)
+            .setCompany(_selectedCompany);
         setState(() {});
       }
+
+      // Los datos se cargarán automáticamente desde assets
+      // cuando se seleccione la semana correcta
     });
   }
 
